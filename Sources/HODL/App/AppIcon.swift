@@ -37,18 +37,17 @@ enum AppIconRenderer {
     }
 }
 
-/// The overnight desk: a closed MacBook under a desk lamp, with a small "Holding" pill floating above it.
+/// Night, a crescent moon, and a MacBook in profile with its lid held open a crack, light still on inside.
 struct AppIconArtwork: View {
-    var showsPill = true
     private let shape = RoundedRectangle(cornerRadius: 186, style: .continuous)
 
     var body: some View {
         ZStack {
             shape
-                .fill(LinearGradient(colors: [Color(red: 0.08, green: 0.10, blue: 0.20), Color(red: 0.16, green: 0.18, blue: 0.32)],
+                .fill(LinearGradient(colors: [Color(red: 0.07, green: 0.09, blue: 0.24), Color(red: 0.20, green: 0.16, blue: 0.46)],
                                      startPoint: .top, endPoint: .bottom))
-                .overlay { DeskScene(showsPill: showsPill).clipShape(shape) }
-                .overlay(shape.strokeBorder(.white.opacity(0.12), lineWidth: 3))
+                .overlay { NightMark().clipShape(shape) }
+                .overlay(shape.strokeBorder(.white.opacity(0.10), lineWidth: 3))
                 .frame(width: 824, height: 824)
                 .shadow(color: .black.opacity(0.3), radius: 22, y: 12)
         }
@@ -56,93 +55,72 @@ struct AppIconArtwork: View {
     }
 }
 
-private struct DeskScene: View {
-    let showsPill: Bool
-    private let warm = Color(red: 1.0, green: 0.82, blue: 0.52)
+private struct NightMark: View {
+    private let moonLight = Color(red: 1.0, green: 0.93, blue: 0.76)
+    private let glow = Color(red: 0.45, green: 0.98, blue: 0.80)
+    private let aluminum = LinearGradient(colors: [Color(white: 0.96), Color(white: 0.72)], startPoint: .top, endPoint: .bottom)
+
+    // Side view of the laptop, in the 824-point icon space.
+    private let hinge = CGPoint(x: 132, y: 586)
+    private let length: CGFloat = 560
+    private let angle = Angle.degrees(-8)
 
     var body: some View {
         ZStack {
-            // A few stars through the window.
-            ForEach(Array([(150.0, 140.0, 7.0), (260, 90, 5), (640, 120, 6), (700, 210, 4), (560, 70, 4)].enumerated()), id: \.offset) { _, star in
-                Circle().fill(.white.opacity(0.7)).frame(width: star.2, height: star.2).position(x: star.0, y: star.1)
+            ForEach(Array([(150.0, 160.0, 9.0), (250, 300, 6), (330, 120, 7), (700, 440, 6), (170, 450, 5), (640, 150, 5)].enumerated()), id: \.offset) { _, star in
+                Circle().fill(.white.opacity(0.75)).frame(width: star.2, height: star.2).position(x: star.0, y: star.1)
             }
-            // Lamp light pooling on the desk.
+            Circle()
+                .fill(RadialGradient(colors: [moonLight.opacity(0.16), moonLight.opacity(0)], center: .center, startRadius: 80, endRadius: 260))
+                .frame(width: 520, height: 520)
+                .position(x: 470, y: 280)
+            Circle()
+                .fill(LinearGradient(colors: [.white, moonLight], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 280, height: 280)
+                .mask {
+                    ZStack {
+                        Rectangle()
+                        Circle().frame(width: 250, height: 250).offset(x: 92, y: -62).blendMode(.destinationOut)
+                    }
+                    .compositingGroup()
+                }
+                .position(x: 450, y: 280)
+
+            // Light from the open crack, falling forward.
             Ellipse()
-                .fill(RadialGradient(colors: [warm.opacity(0.55), warm.opacity(0)], center: .center, startRadius: 10, endRadius: 330))
-                .frame(width: 700, height: 300)
-                .position(x: 430, y: 610)
-            // Desk.
-            Rectangle()
-                .fill(LinearGradient(colors: [Color(red: 0.36, green: 0.26, blue: 0.20), Color(red: 0.22, green: 0.15, blue: 0.12)],
-                                     startPoint: .top, endPoint: .bottom))
-                .frame(width: 824, height: 210)
-                .position(x: 412, y: 719)
-            Rectangle().fill(warm.opacity(0.35)).frame(width: 824, height: 4).position(x: 412, y: 616)
-            lamp
-            laptop
-            if showsPill { pill.position(x: 370, y: 262) }
-        }
-        .frame(width: 824, height: 824)
-    }
-
-    private var laptop: some View {
-        ZStack {
-            // Lid, seen nearly edge-on.
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(white: 0.4))
-                .frame(width: 452, height: 40)
-                .offset(y: 2)
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(LinearGradient(colors: [Color(white: 0.9), Color(white: 0.66)], startPoint: .top, endPoint: .bottom))
-                .frame(width: 440, height: 34)
-                .offset(y: -6)
-            Capsule().fill(Color(white: 0.45)).frame(width: 80, height: 6).offset(y: 14)
-            // A soft glow on the lid where the lamp hits it.
-            Capsule().fill(warm.opacity(0.35)).frame(width: 200, height: 8).blur(radius: 6).offset(x: -60, y: -16)
-        }
-        .shadow(color: .black.opacity(0.45), radius: 14, y: 10)
-        .position(x: 440, y: 590)
-    }
-
-    private var lamp: some View {
-        let metal = LinearGradient(colors: [Color(white: 0.5), Color(white: 0.28)], startPoint: .top, endPoint: .bottom)
-        return ZStack {
-            // Light spilling from the shade.
-            Ellipse().fill(warm.opacity(0.8)).frame(width: 70, height: 26).blur(radius: 14)
-                .rotationEffect(.degrees(-24)).position(x: 572, y: 452)
-            // Arm: base, elbow, and shade joined in one stroke.
-            Path { path in
-                path.move(to: CGPoint(x: 680, y: 600))
-                path.addLine(to: CGPoint(x: 712, y: 430))
-                path.addLine(to: CGPoint(x: 612, y: 372))
-            }
-            .stroke(metal, style: StrokeStyle(lineWidth: 14, lineCap: .round, lineJoin: .round))
-            Circle().fill(Color(white: 0.36)).frame(width: 24, height: 24).position(x: 712, y: 430)
-            // Shade, tipped down toward the laptop.
-            Path { path in
-                path.move(to: CGPoint(x: 596, y: 352))
-                path.addLine(to: CGPoint(x: 640, y: 386))
-                path.addLine(to: CGPoint(x: 600, y: 452))
-                path.addQuadCurve(to: CGPoint(x: 530, y: 404), control: CGPoint(x: 548, y: 452))
-                path.closeSubpath()
-            }
-            .fill(metal)
-            Capsule().fill(warm).frame(width: 64, height: 12).blur(radius: 3)
-                .rotationEffect(.degrees(-56)).position(x: 566, y: 430)
-            Ellipse().fill(Color(white: 0.22)).frame(width: 128, height: 26).position(x: 680, y: 610)
+                .fill(RadialGradient(colors: [glow.opacity(0.32), glow.opacity(0)], center: .center, startRadius: 2, endRadius: 150))
+                .frame(width: 300, height: 70)
+                .blur(radius: 10)
+                .position(x: hinge.x + length + 10, y: hinge.y + 40)
+            gap
+                .fill(LinearGradient(colors: [glow.opacity(0.15), glow, .white], startPoint: .leading, endPoint: .trailing))
+                .shadow(color: glow.opacity(0.9), radius: 26)
+            // Lid, pivoting on the hinge.
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(aluminum)
+                .frame(width: length, height: 26)
+                .overlay(alignment: .top) { Capsule().fill(.white).frame(height: 2).padding(.horizontal, 14).padding(.top, 1) }
+                .rotationEffect(angle, anchor: .bottomLeading)
+                .position(x: hinge.x + length / 2, y: hinge.y - 13)
+            // Base.
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .fill(aluminum)
+                .frame(width: length + 8, height: 36)
+                .overlay(alignment: .bottom) { Capsule().fill(Color(white: 0.5)).frame(width: length - 70, height: 4).offset(y: 3) }
+                .shadow(color: .black.opacity(0.45), radius: 18, y: 12)
+                .position(x: hinge.x + length / 2, y: hinge.y + 18)
         }
     }
 
-    private var pill: some View {
-        HStack(spacing: 18) {
-            Circle().fill(Color(red: 0.3, green: 0.85, blue: 0.5)).frame(width: 28, height: 28)
-            Text(verbatim: "Holding · 4 agents")
-                .font(.system(size: 44, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
-        }
-        .padding(.horizontal, 36)
-        .padding(.vertical, 22)
-        .background(.white.opacity(0.14), in: Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(0.25), lineWidth: 2))
+    /// Between the lid’s underside and the base: nothing at the hinge, wide open at the front.
+    private var gap: Path {
+        let lift = length * CGFloat(sin(-angle.radians))
+        let reach = length * CGFloat(cos(angle.radians))
+        var path = Path()
+        path.move(to: CGPoint(x: hinge.x + 6, y: hinge.y))
+        path.addLine(to: CGPoint(x: hinge.x + reach - 4, y: hinge.y - lift + 3))
+        path.addLine(to: CGPoint(x: hinge.x + reach - 4, y: hinge.y))
+        path.closeSubpath()
+        return path
     }
 }

@@ -18,7 +18,7 @@ enum LidPack {
 
     private(set) static var isApplied = false
 
-    static func apply() {
+    static func apply(lowPower: Bool = true) {
         guard !isApplied else { return }
         isApplied = true
         var applied: [String] = []
@@ -27,6 +27,11 @@ enum LidPack {
             Recovery.record { if $0.brightnessWas == nil { $0.brightnessWas = level } }
             Brightness.set(0)
             applied.append("dimmed")
+        }
+        if Prefs.bool(Prefs.packDim), let level = KeyboardLight.get(), level > 0 {
+            Recovery.record { if $0.keyboardWas == nil { $0.keyboardWas = level } }
+            KeyboardLight.set(0)
+            applied.append("keyboard light off")
         }
         if Prefs.bool(Prefs.packMute), let device = Audio.defaultOutput(), Audio.isMuted(device) == false {
             Recovery.record { $0.mutedDevice = device }
@@ -41,7 +46,15 @@ enum LidPack {
                 applied.append("paused \(Set(targets.map(\.name)).sorted().joined(separator: ", "))")
             }
         }
-        if Prefs.bool(Prefs.packLowPower) { LowPower.enable(because: "lid closed") }
+        if Prefs.bool(Prefs.packPauseApps) {
+            let targets = otherAppProcesses()
+            if !targets.isEmpty {
+                Recovery.record { $0.paused = Array(Set($0.paused).union(targets)) }
+                targets.forEach { kill($0.pid, SIGSTOP) }
+                applied.append("paused \(Set(targets.map(\.name)).count) other apps")
+            }
+        }
+        if lowPower, Prefs.bool(Prefs.packLowPower) { LowPower.enable(because: "lid closed") }
         if Prefs.bool(Prefs.packLock) {
             ScreenLock.lockNow()
             applied.append("locked")
@@ -58,13 +71,32 @@ enum LidPack {
         return failures
     }
 
+    /// Browsers stay running because agents drive them, and editors because agents run inside them.
+    static let neverPauseAnyApp: Set<String> = neverPauseBundleIDs.union([
+        "com.apple.Safari", "com.google.Chrome", "com.google.Chrome.canary", "company.thebrowser.Browser",
+        "org.mozilla.firefox", "com.microsoft.edgemac", "com.brave.Browser", "org.chromium.Chromium",
+        "com.microsoft.VSCode", "com.microsoft.VSCodeInsiders", "com.jetbrains.intellij", "com.sublimetext.4",
+        "dev.zed.Zed", "com.apple.dt.Xcode", "com.docker.docker", "com.utmapp.UTM",
+    ])
+
     /// Chat apps plus their helper processes, minus anything protected.
     private static func chatProcesses() -> [PausedProcess] {
-        let apps = NSWorkspace.shared.runningApplications
-        let roots = apps.filter { app in
+        processes(of: NSWorkspace.shared.runningApplications.filter { app in
             guard let id = app.bundleIdentifier else { return false }
             return chatBundleIDs.contains(id) && !neverPauseBundleIDs.contains(id)
-        }
+        })
+    }
+
+    /// Every other Dock app that isn’t Apple’s, protected, a browser, an editor, or HODL itself.
+    private static func otherAppProcesses() -> [PausedProcess] {
+        processes(of: NSWorkspace.shared.runningApplications.filter { app in
+            guard app.activationPolicy == .regular, let id = app.bundleIdentifier,
+                  app.processIdentifier != getpid() else { return false }
+            return !id.hasPrefix("com.apple.") && !neverPauseAnyApp.contains(id) && !chatBundleIDs.contains(id)
+        })
+    }
+
+    private static func processes(of roots: [NSRunningApplication]) -> [PausedProcess] {
         guard !roots.isEmpty else { return [] }
         let tree = ProcessTable.snapshotParents()
         var result: [PausedProcess] = []

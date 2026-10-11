@@ -16,7 +16,8 @@ enum HookInstaller {
     private static let claudeSettings = home.appending(path: ".claude/settings.json")
     private static let codexConfig = home.appending(path: ".codex/config.toml")
     private static let cursorHooks = home.appending(path: ".cursor/hooks.json")
-    private static let openCodePlugin = home.appending(path: ".config/opencode/plugin/hodl.js")
+    private static let openCodePlugin = home.appending(path: ".config/opencode/plugins/hodl.js")
+    private static let legacyOpenCodePlugin = home.appending(path: ".config/opencode/plugin/hodl.js")
 
     private static let claudeEvents: [(event: String, state: String, matcher: String?)] = [
         ("UserPromptSubmit", "working", nil), ("PreToolUse", "working", "*"),
@@ -59,6 +60,7 @@ enum HookInstaller {
         report.append(attempt("Codex", folder: ".codex", uninstall: true, uninstallCodex))
         report.append(attempt("Cursor", folder: ".cursor", uninstall: true) { try editJSON(cursorHooks) { removeCursor(&$0) } })
         try? FileManager.default.removeItem(at: openCodePlugin)
+        try? FileManager.default.removeItem(at: legacyOpenCodePlugin)
         return report
     }
 
@@ -81,6 +83,16 @@ enum HookInstaller {
             try? manager.removeItem(at: target)
             try manager.copyItem(at: source.appending(path: tool), to: target)
             try manager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: target.path)
+        }
+    }
+
+    /// Removes the command-line tools, but only files HODL put there.
+    static func removeTools() {
+        for tool in ["hodl", "hodl-run", "hodl-hook"] {
+            let target = binFolder.appending(path: tool)
+            if (try? String(contentsOf: target, encoding: .utf8))?.contains("HODL") == true {
+                try? FileManager.default.removeItem(at: target)
+            }
         }
     }
 
@@ -173,9 +185,10 @@ enum HookInstaller {
         try lines.joined(separator: "\n").write(to: codexConfig, atomically: true, encoding: .utf8)
     }
 
-    // MARK: OpenCode (~/.config/opencode/plugin/hodl.js)
+    // MARK: OpenCode (~/.config/opencode/plugins/hodl.js)
 
     private static func installOpenCode() throws {
+        try? FileManager.default.removeItem(at: legacyOpenCodePlugin)
         try FileManager.default.createDirectory(at: openCodePlugin.deletingLastPathComponent(), withIntermediateDirectories: true)
         let plugin = """
         // Installed by HODL. Tells HODL when an OpenCode session starts and stops working.

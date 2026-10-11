@@ -24,6 +24,8 @@ struct SettingsView: View {
     @AppStorage(Prefs.packPauseChat) private var packPauseChat = true
     @AppStorage(Prefs.packLowPower) private var packLowPower = false
     @AppStorage(Prefs.packLock) private var packLock = false
+    @AppStorage(Prefs.packPauseApps) private var packPauseApps = false
+    @AppStorage(Prefs.preventLock) private var preventLock = false
     @AppStorage(Prefs.closedLidOnBattery) private var closedLidOnBattery = false
     @AppStorage(Prefs.caffeinateAlways) private var caffeinateAlways = false
     @AppStorage(Prefs.playSounds) private var playSounds = true
@@ -36,6 +38,15 @@ struct SettingsView: View {
     private let hookedState = State(initialValue: HookInstaller.installedAgents)
     private let helperErrorState = State<String?>(initialValue: nil)
     private let appNapState = State(initialValue: AppNap.isDisabledForAgents)
+    private let watchedState = State(initialValue: Prefs.watchedAppIDs)
+
+    private var watchedApps: [String] {
+        get { watchedState.wrappedValue }
+        nonmutating set {
+            watchedState.wrappedValue = newValue
+            Prefs.watchedAppIDs = newValue
+        }
+    }
 
     private var appNapOff: Bool {
         get { appNapState.wrappedValue }
@@ -78,6 +89,7 @@ struct SettingsView: View {
         .frame(width: 540)
         .onAppear { NSApp.activate() }
         .onChange(of: keepDisplayAwake) { engine.settingsChanged() }
+        .onChange(of: preventLock) { engine.settingsChanged() }
         .onChange(of: closedLidOnBattery) { engine.settingsChanged() }
         .onChange(of: hotkey) { engine.settingsChanged() }
         .onChange(of: lidPolicy) { engine.settingsChanged() }
@@ -109,6 +121,23 @@ struct SettingsView: View {
                     ForEach(PowerMode.allCases) { Text($0.title).tag($0) }
                 }
                 Text(powerMode.detail).font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Hold while an app runs") {
+                ForEach(watchedApps, id: \.self) { id in
+                    HStack {
+                        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) {
+                            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 18, height: 18)
+                        }
+                        Text(verbatim: HoldEngine.appName(id))
+                        Spacer()
+                        Button { watchedApps.removeAll { $0 == id } } label: { Image(systemName: "minus.circle") }
+                            .buttonStyle(.borderless)
+                            .help(Text("Stop watching this app"))
+                    }
+                }
+                Button("Add App…") { chooseApp() }
+                Text("When one of these apps opens, HODL holds until it quits, up to the longest hold you allow. A training run, a render, or a long download keeps the Mac awake on its own.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -171,19 +200,23 @@ struct SettingsView: View {
             Section("When the lid closes during a hold") {
                 Toggle("Use the lid pack", isOn: $lidPack)
                 Group {
-                    Toggle("Dim the display", isOn: $packDim)
+                    Toggle("Dim the display and keyboard light", isOn: $packDim)
                     Toggle("Mute sound", isOn: $packMute)
                     Toggle("Pause Slack, Discord, and WhatsApp", isOn: $packPauseChat)
+                    Toggle("Pause other Dock apps too", isOn: $packPauseApps)
                     Toggle("Turn on Low Power Mode", isOn: $packLowPower).disabled(!helperInstalled)
                     Toggle("Lock the screen", isOn: $packLock)
                 }
                 .disabled(!lidPack)
-                Text("Agents, terminals, and meeting apps (Zoom, Teams, Webex, FaceTime, OBS, Loom) are never paused. Everything resumes when the lid opens or the hold ends. On Apple silicon the built-in microphone disconnects while the lid is closed.")
+                Text("Agents, terminals, meeting apps (Zoom, Teams, Webex, FaceTime, OBS, Loom), browsers, editors, and Apple’s own apps are never paused. Everything resumes when the lid opens or the hold ends. On Apple silicon the built-in microphone disconnects while the lid is closed.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Display") {
                 Toggle("Turn the display off when a hold starts", isOn: $displayOff)
-                Toggle("Keep the display on and the screen saver away", isOn: $keepDisplayAwake)
+                Toggle("Keep the display on", isOn: $keepDisplayAwake)
+                Toggle("Prevent the screen saver and screen lock", isOn: $preventLock)
+                Text("Off, macOS starts the screen saver and locks the screen as usual while your agents keep working. On, HODL tells macOS someone is there every 30 seconds, so neither starts until the hold ends.")
+                    .font(.caption).foregroundStyle(.secondary)
                 Picker("Turn the display off after agents finish", selection: $displayOffAfterAgents) {
                     Text("Never").tag(0)
                     ForEach([10, 30, 60, 300], id: \.self) { Text($0 < 60 ? "After \($0) seconds" : "After \($0 / 60) minute\($0 == 60 ? "" : "s")").tag($0) }
@@ -259,35 +292,48 @@ struct SettingsView: View {
                 Toggle("Also run caffeinate as a backup", isOn: $caffeinateAlways)
                 Text("HODL uses IOKit power assertions. It starts `caffeinate -i -s` on its own only if macOS refuses them.")
                     .font(.caption).foregroundStyle(.secondary)
-            } footer: {
-                VStack(spacing: 2) {
-                    Text("HODL \(Bundle.main.shortVersion) · Hold the Door Lid.")
-                    Link(AppLinks.repositoryLabel, destination: AppLinks.repository)
+            }
+            Section {
+                LabeledContent("Remove HODL from this Mac") {
+                    Button("Uninstall…", role: .destructive) { Uninstaller.run() }
                 }
-                .font(.caption).foregroundStyle(.tertiary)
+                Text("Removes hooks, command-line tools, the closed-lid helper, and the login item, then moves HODL to the Trash. HODL won’t uninstall while a hold is running or something is still waiting to be put back.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } footer: {
+                VStack(spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text("Made by").foregroundStyle(.secondary)
+                        Text(verbatim: "1xAI").font(.system(.callout, design: .rounded).weight(.heavy))
+                    }
+                    HStack(spacing: 10) {
+                        Link("Visit the website", destination: AppLinks.website)
+                        Link(AppLinks.repositoryLabel, destination: AppLinks.repository)
+                    }
+                    .font(.caption)
+                    Text(verbatim: "HODL \(Bundle.main.shortVersion) · \(Bundle.main.copyright)")
+                        .font(.caption).foregroundStyle(.tertiary)
+                }
                 .frame(maxWidth: .infinity)
+                .padding(.top, 8)
             }
         }
         .formStyle(.grouped)
         .fixedSize(horizontal: false, vertical: true)
     }
 
+    private func chooseApp() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.allowsMultipleSelection = true
+        panel.prompt = "Watch"
+        guard panel.runModal() == .OK else { return }
+        let ids = panel.urls.compactMap { Bundle(url: $0)?.bundleIdentifier }.filter { $0 != Bundle.main.bundleIdentifier }
+        watchedApps = Array(NSOrderedSet(array: watchedApps + ids)) as? [String] ?? watchedApps
+    }
+
     private func toggleHelper() {
-        helperError = nil
-        let rule = Privileged.sudoersRule.replacingOccurrences(of: "\n", with: "\\n")
-        let script: String
-        if helperInstalled {
-            script = "rm -f \(Privileged.sudoersPath)"
-        } else {
-            let temp = "/tmp/hodl-sudoers-\(UUID().uuidString)"
-            script = "printf '\(rule)' > \(temp) && /usr/sbin/visudo -cf \(temp) && install -m 0440 -o root -g wheel \(temp) \(Privileged.sudoersPath); rc=$?; rm -f \(temp); exit $rc"
-        }
-        var error: NSDictionary?
-        NSAppleScript(source: "do shell script \"\(script.replacingOccurrences(of: "\"", with: "\\\""))\" with administrator privileges")?
-            .executeAndReturnError(&error)
-        if let error, (error[NSAppleScript.errorNumber] as? Int) != -128 {
-            helperError = error[NSAppleScript.errorMessage] as? String ?? "The helper couldn’t be changed."
-        }
+        helperError = helperInstalled ? Privileged.removeRule() : Privileged.installRule()
         helperInstalled = Privileged.isInstalled
         if !helperInstalled { closedLidOnBattery = false }
     }

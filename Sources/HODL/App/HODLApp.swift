@@ -123,8 +123,11 @@ final class AppWindows {
 enum AppLinks {
     static let repository = URL(string: "https://github.com/deepujain/hodl")!
     static let repositoryLabel = "github.com/deepujain/hodl"
+    static let website = URL(string: "https://1xaispark.com/apps/hodl.html")!
 }
 
 extension Bundle {
     var shortVersion: String { object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0" }
+    var buildNumber: String { object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1" }
+    var copyright: String { object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? "© 2026 1xAI" }
 }

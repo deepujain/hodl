@@ -15,9 +15,10 @@ struct RecoveryJournal: Codable, Sendable {
     /// The output device HODL muted; it was unmuted before.
     var mutedDevice: UInt32?
     var brightnessWas: Float?
+    var keyboardWas: Float?
 
     var isEmpty: Bool {
-        !sleepDisabled && lowPowerWas == nil && paused.isEmpty && mutedDevice == nil && brightnessWas == nil
+        !sleepDisabled && lowPowerWas == nil && paused.isEmpty && mutedDevice == nil && brightnessWas == nil && keyboardWas == nil
     }
 }
 
@@ -87,6 +88,10 @@ enum Recovery {
             Brightness.set(level)
             journal.brightnessWas = nil
         }
+        if parts.contains(.brightness), let level = journal.keyboardWas {
+            KeyboardLight.set(level)
+            journal.keyboardWas = nil
+        }
         if parts.contains(.lowPower), let was = journal.lowPowerWas {
             if Privileged.pmset(["-a", "lowpowermode", was ? "1" : "0"]) {
                 journal.lowPowerWas = nil
@@ -130,6 +135,25 @@ enum Privileged {
     static var sudoersRule: String {
         "# Installed by HODL. Lets HODL switch closed-lid sleep and Low Power Mode, and nothing else.\n"
             + "\(NSUserName()) ALL=(root) NOPASSWD: \(commands.joined(separator: ", "))\n"
+    }
+
+    /// Installs the rule after `visudo` checks it. Asks for an administrator password. Returns an error, or nil.
+    static func installRule() -> String? {
+        let rule = sudoersRule.replacingOccurrences(of: "\n", with: "\\n")
+        let temp = "/tmp/hodl-sudoers-\(UUID().uuidString)"
+        return runAsAdmin("printf '\(rule)' > \(temp) && /usr/sbin/visudo -cf \(temp) && install -m 0440 -o root -g wheel \(temp) \(sudoersPath); rc=$?; rm -f \(temp); exit $rc")
+    }
+
+    static func removeRule() -> String? {
+        runAsAdmin("rm -f \(sudoersPath)")
+    }
+
+    private static func runAsAdmin(_ script: String) -> String? {
+        var error: NSDictionary?
+        NSAppleScript(source: "do shell script \"\(script.replacingOccurrences(of: "\"", with: "\\\""))\" with administrator privileges")?
+            .executeAndReturnError(&error)
+        guard let error, (error[NSAppleScript.errorNumber] as? Int) != -128 else { return nil }
+        return error[NSAppleScript.errorMessage] as? String ?? "The closed-lid helper couldn’t be changed."
     }
 }
 
@@ -206,6 +230,35 @@ enum Brightness {
     static func set(_ level: Float) {
         guard let setter = symbol("DisplayServicesSetBrightness", as: Setter.self) else { return }
         _ = setter(CGMainDisplayID(), max(0, min(1, level)))
+    }
+}
+
+/// The keyboard backlight, through CoreBrightness’s `KeyboardBrightnessClient`, the class Control Center uses.
+enum KeyboardLight {
+    private typealias Getter = @convention(c) (AnyObject, Selector, UInt64) -> Float
+    private typealias Setter = @convention(c) (AnyObject, Selector, Float, UInt64) -> Bool
+
+    private static func client() -> (NSObject, UInt64)? {
+        guard dlopen("/System/Library/PrivateFrameworks/CoreBrightness.framework/CoreBrightness", RTLD_LAZY) != nil,
+              let type = NSClassFromString("KeyboardBrightnessClient") as? NSObject.Type else { return nil }
+        let client = type.init()
+        let idsSelector = NSSelectorFromString("copyKeyboardBacklightIDs")
+        guard client.responds(to: idsSelector),
+              let ids = client.perform(idsSelector)?.takeRetainedValue() as? [NSNumber],
+              let first = ids.first else { return nil }
+        return (client, first.uint64Value)
+    }
+
+    static func get() -> Float? {
+        let selector = NSSelectorFromString("brightnessForKeyboard:")
+        guard let (client, id) = client(), client.responds(to: selector) else { return nil }
+        return unsafeBitCast(client.method(for: selector), to: Getter.self)(client, selector, id)
+    }
+
+    static func set(_ level: Float) {
+        let selector = NSSelectorFromString("setBrightness:forKeyboard:")
+        guard let (client, id) = client(), client.responds(to: selector) else { return }
+        _ = unsafeBitCast(client.method(for: selector), to: Setter.self)(client, selector, max(0, min(1, level)), id)
     }
 }
 

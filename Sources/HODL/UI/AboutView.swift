@@ -2,29 +2,56 @@ import SwiftUI
 
 struct AboutView: View {
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
             AppIconArtwork()
-                .scaleEffect(180 / 1024)
-                .frame(width: 180, height: 180)
-            VStack(spacing: 4) {
+                .scaleEffect(200 / 1024)
+                .frame(width: 200, height: 200)
+                .padding(.top, 26)
+
+            VStack(spacing: 6) {
                 Text(verbatim: "HODL")
-                    .font(.system(.largeTitle, design: .rounded).weight(.semibold))
-                Text("Hold the Door Lid")
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                Text("Version \(Bundle.main.shortVersion) (\(Bundle.main.buildNumber))")
+                    .font(.callout.monospacedDigit())
                     .foregroundStyle(.secondary)
-                Text("Version \(Bundle.main.shortVersion)")
-                    .font(.caption).foregroundStyle(.tertiary)
+                    .textSelection(.enabled)
+                Text("Keeps your Mac awake so your AI agents keep working overnight.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 4)
+                    .padding(.horizontal, 28)
             }
-            Text("Keeps your Mac awake overnight so Cursor, Claude Code, Codex, Aider, and Pi keep working, with the lid open or closed. It lets go when your agents finish, the battery runs low, or the Mac gets hot.")
-                .multilineTextAlignment(.center)
-                .font(.callout)
-                .frame(maxWidth: 360)
-            Label("Keep the Mac on a desk or stand, not in a closed bag.", systemImage: "wind")
-                .font(.caption).foregroundStyle(.secondary)
-            Link(AppLinks.repositoryLabel, destination: AppLinks.repository)
+
+            HStack(spacing: 10) {
+                Text("Made by")
+                    .foregroundStyle(.secondary)
+                Text(verbatim: "1xAI")
+                    .font(.system(.body, design: .rounded).weight(.heavy))
+            }
+            .padding(.top, 18)
+
+            Link(destination: AppLinks.website) {
+                Label("Visit the website", systemImage: "safari")
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.regular)
+            .padding(.top, 10)
+
+            Text(verbatim: Bundle.main.copyright)
                 .font(.caption)
+                .foregroundStyle(.tertiary)
+                .padding(.top, 14)
+                .padding(.bottom, 22)
         }
-        .padding(32)
-        .padding(.top, 8)
-        .frame(width: 440)
+        .frame(width: 340)
+        .background(alignment: .top) {
+            LinearGradient(colors: [Color(red: 0.55, green: 0.52, blue: 0.95).opacity(0.45),
+                                    Color(red: 0.45, green: 0.85, blue: 0.80).opacity(0.22), .clear],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: 300)
+                .ignoresSafeArea()
+        }
     }
 }

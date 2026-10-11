@@ -16,6 +16,8 @@ final class HoldEngine {
         var adaptive: Bool
         var source: String
         var warnedBeforeEnd = false
+        /// Bundle ID of the app this hold follows. The hold ends when it quits.
+        var watchedApp: String?
     }
 
     struct Release: Sendable {
@@ -40,6 +42,11 @@ final class HoldEngine {
     @ObservationIgnored private var displayTask: Task<Void, Never>?
     @ObservationIgnored private var tickTimer: Timer?
     @ObservationIgnored private var signalSources: [DispatchSourceSignal] = []
+    /// A watched app the user released or HODL refused; it won’t start a hold again until it quits.
+    @ObservationIgnored private var skippedApps: Set<String> = []
+    @ObservationIgnored private var lowPowerSeen: Bool?
+    /// The user turned Low Power Mode off during this hold, so HODL won’t turn it back on.
+    @ObservationIgnored private var lowPowerDeclined = false
 
     private let power = PowerMonitor.shared
     private let agents = AgentMonitor.shared
@@ -59,8 +66,11 @@ final class HoldEngine {
         tickTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
             MainActor.assumeIsolated { HoldEngine.shared.tick() }
         }
-        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { _ in
-            MainActor.assumeIsolated { HoldEngine.shared.tick() }
+        let center = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
+            center.addObserver(forName: name, object: nil, queue: .main) { _ in
+                MainActor.assumeIsolated { HoldEngine.shared.tick() }
+            }
         }
         for signalNumber in [SIGTERM, SIGINT, SIGHUP] {
             signal(signalNumber, SIG_IGN)
@@ -96,13 +106,29 @@ final class HoldEngine {
     private func tick() {
         power.refresh()
         agents.refresh()
+        followWatchedApps()
         evaluate()
+    }
+
+    /// Starts a hold when a watched app is running, once per launch of that app.
+    private func followWatchedApps() {
+        let running = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
+        skippedApps.formIntersection(running)
+        guard session == nil,
+              let id = Prefs.watchedAppIDs.first(where: { running.contains($0) && !skippedApps.contains($0) }) else { return }
+        skippedApps.insert(id)
+        hold(duration: .infinity, adaptive: false, source: Self.appName(id), watchedApp: id)
+    }
+
+    static func appName(_ bundleID: String) -> String {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return bundleID }
+        return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
     }
 
     // MARK: Actions
 
     /// Starts a hold. `duration` nil means the default session; `.infinity` means no limit (when allowed).
-    func hold(duration: TimeInterval? = nil, adaptive: Bool? = nil, source: String = "menu") {
+    func hold(duration: TimeInterval? = nil, adaptive: Bool? = nil, source: String = "menu", watchedApp: String? = nil) {
         power.refresh()
         if let problem = startProblem() {
             refusal = problem
@@ -112,14 +138,16 @@ final class HoldEngine {
         }
         refusal = nil
         let unlimited = duration == .infinity && Prefs.bool(Prefs.allowUnlimited)
-        let length = min(duration.flatMap { $0.isFinite ? $0 : nil } ?? Prefs.defaultSession, Prefs.double(Prefs.maxHours) * 3600)
+        let ceiling = Prefs.double(Prefs.maxHours) * 3600
+        let length = min(duration.flatMap { $0.isFinite ? $0 : nil } ?? (watchedApp == nil ? Prefs.defaultSession : ceiling), ceiling)
         let wasHolding = session != nil
         session = Session(ends: unlimited ? nil : Date().addingTimeInterval(length),
-                          adaptive: adaptive ?? Prefs.bool(Prefs.adaptive), source: source)
+                          adaptive: adaptive ?? Prefs.bool(Prefs.adaptive), source: source, watchedApp: watchedApp)
         pausedUntil = nil
+        lowPowerDeclined = false
         lastRelease = nil
         let summary = describeSession()
-        Ledger.shared.add("hold", "\(summary) · from \(source)")
+        Ledger.shared.add("hold", watchedApp == nil ? "\(summary) · from \(source)" : "\(summary)")
         if !wasHolding {
             Sounds.hold()
             Notifier.post("HODL is holding", "\(summary). Keep the Mac on a desk or stand, not in a closed bag.")
@@ -129,7 +157,8 @@ final class HoldEngine {
     }
 
     func release(_ reason: ReleaseReason = .user, quietly: Bool = false) {
-        guard session != nil else { return }
+        guard let ending = session else { return }
+        if let app = ending.watchedApp { skippedApps.insert(app) }
         session = nil
         pausedUntil = nil
         standby = nil
@@ -185,8 +214,9 @@ final class HoldEngine {
 
     /// Re-applies settings that change how the hold is made.
     func settingsChanged() {
-        if engaged, SleepGuard.shared.keepsDisplayAwake != Prefs.bool(Prefs.keepDisplayAwake) {
-            SleepGuard.shared.hold(keepDisplayAwake: Prefs.bool(Prefs.keepDisplayAwake))
+        let guardian = SleepGuard.shared
+        if engaged, guardian.keepsDisplayAwake != Prefs.bool(Prefs.keepDisplayAwake) || guardian.preventsLock != Prefs.bool(Prefs.preventLock) {
+            holdAssertions()
         }
         if engaged { ClosedLid.set(wantsClosedLid) }
         Hotkey.setEnabled(Prefs.bool(Prefs.hotkey))
@@ -229,12 +259,16 @@ final class HoldEngine {
         let now = clock
 
         if let ends = current.ends, now >= ends { return release(.timer) }
+        if let app = current.watchedApp, NSRunningApplication.runningApplications(withBundleIdentifier: app).isEmpty {
+            return release(.appQuit)
+        }
+        noteLowPowerChanges()
         let onBattery = power.hasBattery && !power.onAC
         if Prefs.powerModeValue == .ac && onBattery { return release(.unplugged) }
         if onBattery {
             guard let percent = power.percent else { return release(.batteryUnknown) }
             if percent <= Prefs.int(Prefs.batteryFloor) { return release(.battery) }
-            if Prefs.powerModeValue == .adaptive, percent <= Prefs.int(Prefs.softFloor) {
+            if Prefs.powerModeValue == .adaptive, percent <= Prefs.int(Prefs.softFloor), !lowPowerDeclined {
                 LowPower.enable(because: "battery at \(percent)%")
             }
         }
@@ -245,7 +279,7 @@ final class HoldEngine {
             case .serious:
                 if hotSince == nil {
                     hotSince = now
-                    LowPower.enable(because: "the Mac is hot")
+                    if !lowPowerDeclined { LowPower.enable(because: "the Mac is hot") }
                     Ledger.shared.add("thermal", "The Mac is hot. HODL lets go if it stays hot for 10 minutes.")
                 }
                 if let hotSince, now.timeIntervalSince(hotSince) >= 600 { return release(.thermal) }
@@ -279,7 +313,7 @@ final class HoldEngine {
         why == nil ? engage() : disengage()
 
         if engaged, power.lidClosed, Prefs.bool(Prefs.lidPack) {
-            LidPack.apply()
+            LidPack.apply(lowPower: !lowPowerDeclined)
         } else if LidPack.isApplied, !power.lidClosed || !engaged {
             let failures = LidPack.undo()
             if let first = failures.first { restoreWarning = first }
@@ -291,12 +325,30 @@ final class HoldEngine {
         agentsWereActive = active
     }
 
+    /// Low Power Mode belongs to the user. If they switch it off mid-hold, HODL forgets its change and leaves it off.
+    private func noteLowPowerChanges() {
+        let on = power.lowPowerMode
+        defer { lowPowerSeen = on }
+        guard let before = lowPowerSeen, before != on else { return }
+        if !on, Recovery.load()?.lowPowerWas != nil {
+            Recovery.record { $0.lowPowerWas = nil }
+            lowPowerDeclined = true
+            Ledger.shared.add("low power", "You turned Low Power Mode off. HODL won’t turn it back on during this hold.")
+        } else {
+            Ledger.shared.add("low power", "macOS Low Power Mode is \(on ? "on" : "off"). HODL keeps holding either way.")
+        }
+    }
+
     private func engage() {
         if !engaged || !SleepGuard.shared.isHeld {
-            SleepGuard.shared.hold(keepDisplayAwake: Prefs.bool(Prefs.keepDisplayAwake))
+            holdAssertions()
             engaged = SleepGuard.shared.isHeld
         }
         if engaged, wantsClosedLid != ClosedLid.isOn { ClosedLid.set(wantsClosedLid) }
+    }
+
+    private func holdAssertions() {
+        SleepGuard.shared.hold(keepDisplayAwake: Prefs.bool(Prefs.keepDisplayAwake), preventLock: Prefs.bool(Prefs.preventLock))
     }
 
     private func disengage() {
@@ -348,6 +400,7 @@ final class HoldEngine {
 
     func describeSession() -> String {
         guard let session else { return "Not holding" }
+        if let app = session.watchedApp { return "Holding while \(Self.appName(app)) runs" }
         let length = session.ends.map { "until \($0.formatted(date: .omitted, time: .shortened))" } ?? "with no time limit"
         return session.adaptive ? "Holding \(length) while agents work" : "Holding \(length)"
     }

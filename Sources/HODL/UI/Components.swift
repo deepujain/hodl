@@ -165,7 +165,7 @@ struct HODLMark: View {
     var size: CGFloat = 34
 
     var body: some View {
-        AppIconArtwork(showsPill: false)
+        AppIconArtwork()
             .scaleEffect(size / 824, anchor: .center)
             .frame(width: size, height: size)
             .clipped()

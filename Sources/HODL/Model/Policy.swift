@@ -62,7 +62,7 @@ enum LidPolicy: String, CaseIterable, Identifiable, Codable, Sendable {
 
 /// Why a hold ended. Shown in the menu, the session window, notifications, and the ledger.
 enum ReleaseReason: String, Codable, Sendable {
-    case user, timer, battery, batteryUnknown, thermal, agentsIdle, unplugged, quit, recovered
+    case user, timer, battery, batteryUnknown, thermal, agentsIdle, unplugged, quit, recovered, appQuit
 
     /// A few words for the status line: "Released · thermal".
     var short: String {
@@ -76,6 +76,7 @@ enum ReleaseReason: String, Codable, Sendable {
         case .unplugged: "unplugged"
         case .quit: "HODL quit"
         case .recovered: "recovered"
+        case .appQuit: "app quit"
         }
     }
 
@@ -90,6 +91,7 @@ enum ReleaseReason: String, Codable, Sendable {
         case .unplugged: "The Mac was unplugged while AC Only was on."
         case .quit: "HODL quit and restored normal sleep."
         case .recovered: "HODL found an unfinished hold from last time and restored normal sleep."
+        case .appQuit: "The app this hold was waiting on quit."
         }
     }
 

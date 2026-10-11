@@ -22,6 +22,9 @@ enum Prefs {
     static let packPauseChat = "packPauseChat"
     static let packLowPower = "packLowPower"
     static let packLock = "packLock"
+    static let packPauseApps = "packPauseApps"
+    static let preventLock = "preventLock"
+    static let watchedApps = "watchedApps"
     static let closedLidOnBattery = "closedLidOnBattery"
     static let caffeinateAlways = "caffeinateAlways"
     static let playSounds = "playSounds"
@@ -51,6 +54,9 @@ enum Prefs {
             packPauseChat: true,
             packLowPower: false,
             packLock: false,
+            packPauseApps: false,
+            preventLock: false,
+            watchedApps: [String](),
             closedLidOnBattery: false,
             caffeinateAlways: false,
             playSounds: true,
@@ -68,6 +74,12 @@ enum Prefs {
 
     static var powerModeValue: PowerMode { PowerMode(rawValue: store.string(forKey: powerMode) ?? "") ?? .adaptive }
     static var lidPolicyValue: LidPolicy { LidPolicy(rawValue: store.string(forKey: lidPolicy) ?? "") ?? .either }
+
+    /// Bundle IDs that start a hold while they run.
+    static var watchedAppIDs: [String] {
+        get { store.stringArray(forKey: watchedApps) ?? [] }
+        set { store.set(newValue, forKey: watchedApps) }
+    }
 
     /// The session length a plain "Hold" uses, never beyond the hard maximum.
     static var defaultSession: TimeInterval { min(double(sessionHours), double(maxHours)) * 3600 }
