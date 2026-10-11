@@ -91,6 +91,18 @@ final class PowerMonitor {
         }
     }
 
+    #if DEBUG
+    func stage(percent: Int, onAC: Bool, lidClosed: Bool) {
+        hasBattery = true
+        self.percent = percent
+        self.onAC = onAC
+        self.lidClosed = lidClosed
+        lidKnown = true
+        thermal = .nominal
+        lowPowerMode = false
+    }
+    #endif
+
     var batteryLabel: String {
         guard hasBattery else { return "AC" }
         guard let percent else { return "—%" }

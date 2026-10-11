@@ -368,6 +368,25 @@ final class HoldEngine {
         }
     }
 
+    #if DEBUG
+    /// Puts the engine in a state for marketing renders without holding anything.
+    func stage(endsIn: TimeInterval?, released: ReleaseReason? = nil) {
+        clock = Date()
+        standby = nil
+        refusal = nil
+        restoreWarning = nil
+        if let endsIn {
+            session = Session(started: clock.addingTimeInterval(-3600), ends: clock.addingTimeInterval(endsIn), adaptive: false, source: "menu")
+            engaged = true
+            lastRelease = nil
+        } else {
+            session = nil
+            engaged = false
+            lastRelease = released.map { Release(reason: $0) }
+        }
+    }
+    #endif
+
     // MARK: Presentation
 
     var remaining: TimeInterval? { session?.ends.map { max(0, $0.timeIntervalSince(clock)) } }

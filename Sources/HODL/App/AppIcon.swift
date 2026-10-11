@@ -55,7 +55,7 @@ struct AppIconArtwork: View {
     }
 }
 
-private struct NightMark: View {
+struct NightMark: View {
     private let moonLight = Color(red: 1.0, green: 0.93, blue: 0.76)
     private let glow = Color(red: 0.45, green: 0.98, blue: 0.80)
     private let aluminum = LinearGradient(colors: [Color(white: 0.96), Color(white: 0.72)], startPoint: .top, endPoint: .bottom)

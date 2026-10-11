@@ -23,6 +23,11 @@ struct HODLApp: App {
             Snapshots.render(to: URL(fileURLWithPath: arguments[flag + 1], isDirectory: true))
             exit(0)
         }
+        if let flag = arguments.firstIndex(of: "--marketing"), arguments.indices.contains(flag + 1) {
+            Prefs.register()
+            Marketing.render(to: URL(fileURLWithPath: arguments[flag + 1], isDirectory: true))
+            exit(0)
+        }
         if arguments.contains("--install-hooks") || arguments.contains("--uninstall-hooks") {
             let report = arguments.contains("--install-hooks") ? HookInstaller.installAll() : HookInstaller.uninstallAll()
             print(report.joined(separator: "\n"))

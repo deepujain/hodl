@@ -25,6 +25,19 @@ final class AgentMonitor {
     var activeCount: Int { statuses.filter { $0.state == .active }.count }
     var runningCount: Int { statuses.filter { $0.state != .off }.count }
 
+    #if DEBUG
+    func stage(_ states: [String: AgentState]) {
+        statuses = statuses.map { status in
+            var staged = status
+            staged.state = states[status.harness.id] ?? .off
+            staged.processes = staged.state == .off ? 0 : 3
+            staged.cpu = staged.state == .active ? 38 : 0
+            staged.sessions = []
+            return staged
+        }
+    }
+    #endif
+
     /// Primary agents always, plus any others that are running.
     var visibleStatuses: [HarnessStatus] {
         statuses.filter { $0.harness.primary || $0.state != .off }
