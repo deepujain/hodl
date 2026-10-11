@@ -1,0 +1,64 @@
+#!/bin/bash
+# hodl: control HODL from the terminal. Talks to the app on 127.0.0.1:8742.
+set -euo pipefail
+
+API="${HODL_API:-http://127.0.0.1:8742}"
+
+usage() {
+  cat <<'EOF'
+hodl: keep the Mac awake for coding agents (HODL)
+
+  hodl hold [--hours N | --until agents-idle | --until 07:00 | --no-limit]
+  hodl release
+  hodl toggle
+  hodl extend [hours]          add time (default 1 hour)
+  hodl pause [minutes]         stand by for a while (default 30)
+  hodl resume
+  hodl status                  JSON status
+  hodl display-off
+  hodl install-hooks           add Working/Idle hooks to Claude Code, Codex, Cursor, OpenCode
+
+Also: open 'hodl://hold?hours=8', 'hodl://release', 'hodl://toggle', 'hodl://extend?hours=1', 'hodl://status'
+EOF
+}
+
+call() {
+  local method=$1 path=$2
+  if ! curl -fsS -m 3 -X "$method" -H 'X-HODL: 1' "$API$path"; then
+    echo "HODL isn't answering on $API. Is HODL.app running?" >&2
+    exit 1
+  fi
+}
+
+command=${1:-status}
+shift || true
+
+case "$command" in
+  hold)
+    query="source=cli"
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --hours) query+="&hours=${2:?}"; shift 2 ;;
+        --until)
+          case "${2:?}" in
+            agents-idle) query+="&until=agents-idle" ;;
+            *:*) query+="&at=$2" ;;
+            *) echo "--until takes agents-idle or a time like 07:00" >&2; exit 2 ;;
+          esac
+          shift 2 ;;
+        --no-limit) query+="&unlimited=1"; shift ;;
+        *) echo "Unknown option: $1" >&2; usage; exit 2 ;;
+      esac
+    done
+    call POST "/hold?$query" ;;
+  release|stop) call POST /release ;;
+  toggle) call POST /toggle ;;
+  extend|add) call POST "/extend?hours=${1:-1}" ;;
+  pause) call POST "/pause?minutes=${1:-30}" ;;
+  resume) call POST /resume ;;
+  status) call GET /status ;;
+  display-off) call POST /display-off ;;
+  install-hooks) call POST /install-hooks ;;
+  help|-h|--help) usage ;;
+  *) echo "Unknown command: $command" >&2; usage; exit 2 ;;
+esac

@@ -1,0 +1,51 @@
+#!/bin/bash
+# hodl-run: keep the Mac awake while a command runs, for agents without hooks.
+# Usage: hodl-run [--agent NAME] [--hours N] -- <command...>
+# Starts a hold if none is running, renews a heartbeat lease every 30 seconds,
+# and ends the lease when the command exits. HODL lets go after the idle timeout once
+# every lease has ended or stopped beating.
+set -uo pipefail
+
+API="${HODL_API:-http://127.0.0.1:8742}"
+AGENT=""
+HOURS=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --agent) AGENT="${2:?}"; shift 2 ;;
+    --hours) HOURS="${2:?}"; shift 2 ;;
+    --) shift; break ;;
+    *) break ;;
+  esac
+done
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: hodl-run [--agent NAME] [--hours N] -- <command...>" >&2
+  exit 2
+fi
+
+LEASE="run-$$-$(date +%s)"
+post() { curl -fsS -m 2 -X POST -H 'X-HODL: 1' "$API$1" >/dev/null 2>&1; }
+
+if ! post "/status"; then
+  open -g "hodl://status" 2>/dev/null || true
+fi
+post "/heartbeat?id=$LEASE&agent=$AGENT&ttl=90&pid=$$" || echo "hodl-run: HODL isn't answering on $API; running anyway." >&2
+status=$(curl -fsS -m 2 "$API/status" 2>/dev/null || true)
+# A hold started here lasts until every agent and run is idle, so parallel runs share it.
+if [[ "$status" != *'"holding" : true'* ]]; then
+  post "/hold?source=hodl-run&until=agents-idle${HOURS:+&hours=$HOURS}" || true
+fi
+
+( while sleep 30; do post "/heartbeat?id=$LEASE&agent=$AGENT&ttl=90&pid=$$" || true; done ) &
+BEAT=$!
+
+finish() {
+  kill "$BEAT" 2>/dev/null || true
+  post "/lease-end?id=$LEASE" || true
+}
+trap finish EXIT
+trap 'exit 130' INT TERM
+
+"$@"
+exit $?

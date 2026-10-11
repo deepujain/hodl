@@ -1,0 +1,45 @@
+#!/bin/bash
+# hodl-hook: tells HODL that an agent session started or stopped working.
+# Usage: hodl-hook <agent> <working|idle|ended> [--then <command...>] [payload]
+#
+# Agents pass a JSON payload on stdin (Claude Code, Cursor) or as the last argument (Codex notify).
+# Only the session ID is pulled out of it. Prompts, code, and output never leave this script.
+# With --then, the remaining arguments run afterwards with the original payload, so an existing
+# Codex notify command keeps working.
+
+agent=${1:-}
+state=${2:-working}
+shift 2 2>/dev/null || true
+
+then_cmd=()
+if [[ "${1:-}" == "--then" ]]; then
+  shift
+  then_cmd=("$@")
+  set --
+fi
+
+payload=""
+if [[ ${#then_cmd[@]} -gt 0 ]]; then
+  payload=${then_cmd[${#then_cmd[@]}-1]}
+elif [[ $# -gt 0 ]]; then
+  payload=${!#}
+elif [[ ! -t 0 ]]; then
+  payload=$(head -c 262144)
+fi
+
+session=$(printf '%s' "$payload" \
+  | grep -oE '"(session_id|thread-id|thread_id|conversation_id|sessionID)"[[:space:]]*:[[:space:]]*"[A-Za-z0-9._:-]{1,64}"' \
+  | head -n 1 | sed -E 's/.*"([^"]+)"$/\1/')
+
+curl -s -m 1 -X POST -H 'X-HODL: 1' \
+  "http://127.0.0.1:8742/hook?agent=${agent}&state=${state}&session=${session}&pid=${PPID}" >/dev/null 2>&1 || true
+
+# Cursor's beforeSubmitPrompt expects an answer; always let the prompt through.
+if [[ "$agent" == "cursor" && "$state" == "working" ]]; then
+  echo '{"continue":true}'
+fi
+
+if [[ ${#then_cmd[@]} -gt 0 ]]; then
+  exec "${then_cmd[@]}"
+fi
+exit 0
