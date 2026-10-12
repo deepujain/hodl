@@ -42,14 +42,14 @@ The pipeline matches [Where’d It Go](https://github.com/deepujain/whereditgo):
 
 **Hold while an app runs.** Add apps in Settings › Hold. When one opens, HODL holds until it quits, up to the hard maximum. Release it by hand and HODL leaves that app alone until it next opens.
 
-**Power modes.** *Adaptive* holds on AC or battery and turns on Low Power Mode at a soft floor (40%) before the hard stop. *AC Only* holds only while plugged in. *Battery* holds down to the floor with no Low Power step. Assertions are recreated whenever the power source changes, so a plug or unplug with the lid closed doesn’t slip through.
+**Power modes.** *Any Power* holds on AC or battery and turns on Low Power Mode at a soft floor (40%) before the hard stop. *AC Only* holds only while plugged in. *Battery* holds down to the floor with no Low Power step. Assertions are recreated whenever the power source changes, so a plug or unplug with the lid closed doesn’t slip through.
 
 **Lid policy.** Hold with the lid open, closed, or either.
 
 **Agents.** HODL watches Cursor, Claude Code, Codex, Aider, Pi, OpenCode, Gemini CLI, Copilot CLI, Windsurf, and Cline. Each shows as Active, Idle, Detected, or Not running.
 - **Hooks first.** One click (or `hodl install-hooks`) adds Working/Idle hooks to Claude Code, Codex, Cursor, and OpenCode, so HODL tracks each session separately and knows exactly when it’s working. Existing hooks are kept; Codex’s existing `notify` command is chained, not replaced. Every edited file is backed up as `.hodl-backup`.
 - **Processes as a fallback.** Without hooks, HODL matches executable paths and bundle IDs and estimates work from CPU use across each agent’s process tree.
-- **Adaptive hold.** With Adaptive on, HODL holds only while an agent is working and lets go after a configurable idle timeout (10 minutes by default).
+- **Agents Only.** With Agents Only on, HODL holds only while an agent is working and lets go after a configurable idle timeout (10 minutes by default).
 - **Privacy.** HODL never reads code, prompts, or terminal output. Hooks send only the agent name, its state, and a session ID; for interpreters, HODL reads only the script path.
 
 **Lid pack.** When the lid closes during a hold: dim the display and keyboard backlight, mute sound, pause Slack, Discord, and WhatsApp (`SIGSTOP`), and optionally pause every other Dock app, turn on Low Power Mode, and lock the screen. Agents, terminals, meeting apps (Zoom, Teams, Webex, FaceTime, OBS, Loom), browsers, editors, and Apple’s own apps are never paused. Everything resumes when the lid opens or the hold ends.

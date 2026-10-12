@@ -137,8 +137,7 @@ struct MenuPanel: View {
                     }
                     .pickerStyle(.inline)
                 } label: {
-                    Tile(symbol: powerMode.symbol, title: powerMode.title, value: power.hasBattery ? "\(power.batteryLabel)\(power.onAC ? " · AC" : "")" : "AC power",
-                         tint: .accentColor)
+                    Tile(symbol: powerMode.symbol, title: "Power", value: powerMode.title, tint: .accentColor) { MenuChevron() }
                 }
                 .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
                 .help(Text(verbatim: powerMode.detail))
@@ -149,8 +148,8 @@ struct MenuPanel: View {
                     }
                     .pickerStyle(.inline)
                 } label: {
-                    Tile(symbol: power.lidClosed ? "laptopcomputer.slash" : "laptopcomputer", title: lidPolicy.title,
-                         value: power.lidClosed ? "Lid closed" : "Lid open", tint: .accentColor)
+                    Tile(symbol: power.lidClosed ? "laptopcomputer.slash" : "laptopcomputer", title: "Lid",
+                         value: lidPolicy.short, tint: .accentColor) { MenuChevron() }
                 }
                 .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
                 .help(Text(verbatim: lidPolicy.detail))
@@ -161,8 +160,8 @@ struct MenuPanel: View {
                     }
                     .pickerStyle(.inline)
                 } label: {
-                    Tile(symbol: "battery.25percent", title: "Floor", value: "At \(batteryFloor)%",
-                         tint: power.lowPowerMode ? .yellow : .accentColor)
+                    Tile(symbol: "battery.25percent", title: "Battery", value: "Floor \(batteryFloor)%",
+                         tint: power.lowPowerMode ? .yellow : .accentColor) { MenuChevron() }
                 }
                 .menuStyle(.button).buttonStyle(.plain).menuIndicator(.hidden)
                 .help(Text("HODL lets the Mac sleep when the battery reaches this level.\(power.lowPowerMode ? " Low Power Mode is on." : "")"))
@@ -170,7 +169,7 @@ struct MenuPanel: View {
                 Button {
                     thermalGuard.toggle()
                 } label: {
-                    Tile(symbol: "thermometer.medium", title: "Thermal", value: thermalGuard ? power.thermalTitle : "Guard off",
+                    Tile(symbol: "thermometer.medium", title: "Heat", value: thermalGuard ? "On · \(power.thermalTitle)" : "Off",
                          tint: power.thermal.rawValue >= ProcessInfo.ThermalState.serious.rawValue ? .orange : .accentColor,
                          dimmed: !thermalGuard)
                 }
@@ -246,7 +245,7 @@ struct MenuPanel: View {
                 get: { engine.session != nil },
                 set: { $0 ? engine.hold() : engine.release(.user) }
             ), help: "Keep the Mac awake overnight (⌥⌘L). Ends on its own when the session timer runs out.")
-            QuickSwitch(symbol: "sparkles", title: "Adaptive", isOn: $adaptive,
+            QuickSwitch(symbol: "sparkles", title: "Agents Only", isOn: $adaptive,
                         help: "Hold only while an agent is working, and let go after it has been idle for a while.")
             QuickSwitch(symbol: "display", title: "Display Off", isOn: $displayOff,
                         help: "Turn the display off when a hold starts. The Mac stays awake.")

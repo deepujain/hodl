@@ -7,7 +7,7 @@ enum PowerMode: String, CaseIterable, Identifiable, Codable, Sendable {
 
     var title: String {
         switch self {
-        case .adaptive: "Adaptive"
+        case .adaptive: "Any Power"
         case .ac: "AC Only"
         case .battery: "Battery"
         }
@@ -48,6 +48,15 @@ enum LidPolicy: String, CaseIterable, Identifiable, Codable, Sendable {
         case .either: "Hold with the lid open or closed."
         case .closed: "Hold only while the lid is closed. With the lid open, macOS sleeps as usual."
         case .open: "Hold only while the lid is open. Closing it lets the Mac sleep."
+        }
+    }
+
+    /// Fits the panel tile.
+    var short: String {
+        switch self {
+        case .either: "Either"
+        case .closed: "Closed"
+        case .open: "Open"
         }
     }
 

@@ -109,7 +109,7 @@ struct SettingsView: View {
                 Text("A no-limit hold still stops for battery, heat, and unplugging, and is restored if HODL quits or crashes.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Section("Adaptive") {
+            Section("Agents Only") {
                 Toggle("Hold only while an agent is working", isOn: $adaptive)
                 Picker("Let go after agents are idle for", selection: $idleMinutes) {
                     ForEach([2, 5, 10, 15, 20, 30], id: \.self) { Text("\($0) minutes").tag($0) }

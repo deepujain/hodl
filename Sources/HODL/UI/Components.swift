@@ -77,6 +77,15 @@ extension Tile where Accessory == EmptyView {
     }
 }
 
+/// Marks a tile that opens a menu.
+struct MenuChevron: View {
+    var body: some View {
+        Image(systemName: "chevron.down")
+            .font(.system(size: 8, weight: .bold))
+            .foregroundStyle(.tertiary)
+    }
+}
+
 struct StatusDot: View {
     let state: AgentState
 
