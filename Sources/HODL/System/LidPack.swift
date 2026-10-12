@@ -59,15 +59,15 @@ enum LidPack {
             ScreenLock.lockNow()
             applied.append("locked")
         }
-        if !applied.isEmpty { Ledger.shared.add("lid pack", applied.joined(separator: " · ")) }
+        if !applied.isEmpty { Ledger.shared.add("quiet mode", applied.joined(separator: " · ")) }
     }
 
-    /// Undo the lid pack. Low Power Mode stays until the hold ends, since the battery step may also want it.
+    /// Undo Quiet Mode. Low Power Mode stays until the hold ends, since the battery step may also want it.
     static func undo() -> [String] {
         guard isApplied else { return [] }
         isApplied = false
         let failures = Recovery.restore([.processes, .audio, .brightness])
-        Ledger.shared.add("lid pack", failures.isEmpty ? "Resumed apps and restored sound and brightness." : failures.joined(separator: " "))
+        Ledger.shared.add("quiet mode", failures.isEmpty ? "Resumed apps and restored sound and brightness." : failures.joined(separator: " "))
         return failures
     }
 

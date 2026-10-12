@@ -13,20 +13,20 @@
 
 ## Download
 
-**[Download HODL 1.0.1](https://github.com/deepujain/hodl/releases/download/v1.0.1/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.1) · [website](https://1xaispark.com/apps/hodl.html)
+**[Download HODL 1.0.2](https://github.com/deepujain/hodl/releases/download/v1.0.2/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.2) · [website](https://1xaispark.com/apps/hodl.html)
 
 Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL to Applications, then right-click it and choose **Open** the first time; the build isn’t notarized yet.
 
 ## Which switches to turn on
 
-| I want… | 🌙 Stay Awake | ✨ Agents Only | 🖥️ Display Off | 💻 Lid Pack |
+| I want… | 🌙 Stay Awake | ✨ Agents Only | 🖥️ Display Off | 🤫 Quiet Mode |
 |---|:---:|:---:|:---:|:---:|
 | ⭐ **Lid closed, Mac awake overnight while agents run** | ✅ On | ✅ On | Doesn’t matter | ✅ On |
 | **Lid open, Mac awake overnight while agents run** | ✅ On | ✅ On | ✅ On | Doesn’t matter |
 | **Mac awake for 8 hours, agents or not** | ✅ On | Off | ✅ On | ✅ On |
 | **Normal Mac, sleeps as usual** | Off | Doesn’t matter | Doesn’t matter | Doesn’t matter |
 
-On is blue in the panel; Off is grey. **Stay Awake** is the main switch: nothing else keeps the Mac awake on its own. **Agents Only** lets the Mac sleep about 10 minutes after your agents finish, instead of after 8 hours. **Display Off** only turns the screen off. **Lid Pack** only acts when the lid closes: it dims, mutes, and pauses chat apps, and puts them back when the lid opens.
+On is blue in the panel; Off is grey. **Stay Awake** is the main switch: nothing else keeps the Mac awake on its own. **Agents Only** lets the Mac sleep about 10 minutes after your agents finish, instead of after 8 hours. **Display Off** only turns the screen off. **Quiet Mode** only acts when you close the lid: it dims the screen and keyboard light, mutes sound, and pauses chat apps, and puts them back when you open it.
 
 Whatever you choose, the Mac still sleeps at 15% battery or if it gets too hot. With the lid closed on battery, macOS sleeps unless you turn on the closed-lid helper once in **Settings › Lid & Display**; plugged in, nothing else is needed.
 
@@ -72,7 +72,7 @@ The build uses SwiftPM, `lipo` for a universal binary, the icon rendered from `R
 - **Agents Only.** With Agents Only on, HODL keeps the Mac awake only while an agent is working, and lets it sleep after a configurable idle timeout (10 minutes by default).
 - **Privacy.** HODL never reads code, prompts, or terminal output. Hooks send only the agent name, its state, and a session ID; for interpreters, HODL reads only the script path.
 
-**Lid pack.** When the lid closes while HODL is on: dim the display and keyboard backlight, mute sound, pause Slack, Discord, and WhatsApp (`SIGSTOP`), and optionally pause every other Dock app, turn on Low Power Mode, and lock the screen. Agents, terminals, meeting apps (Zoom, Teams, Webex, FaceTime, OBS, Loom), browsers, editors, and Apple’s own apps are never paused. Everything resumes when the lid opens or HODL turns off.
+**Quiet Mode.** When you close the lid while HODL is on: dim the display and keyboard backlight, mute sound, pause Slack, Discord, and WhatsApp (`SIGSTOP`), and optionally pause every other Dock app, turn on Low Power Mode, and lock the screen. Agents, terminals, meeting apps (Zoom, Teams, Webex, FaceTime, OBS, Loom), browsers, editors, and Apple’s own apps are never paused. Everything resumes when the lid opens or HODL turns off.
 
 **Display.** Turn the display off when HODL turns on, turn it off now, turn it off N seconds after agents finish, or keep it on. Separately, *Prevent the screen saver and screen lock* declares user activity every 30 seconds while HODL is on (like `caffeinate -u`); leave it off and macOS locks as usual while agents keep working.
 
@@ -107,7 +107,7 @@ HTTP API on `127.0.0.1:8742` (loopback only): `GET /status`; `POST /hold`, `/rel
 Sources/HODL/App      Entry point, windows, app icon
 Sources/HODL/Model    Preferences, policies, harness catalog
 Sources/HODL/Engine   Stay-awake engine, commands, local HTTP API
-Sources/HODL/System   Assertions, power, recovery journal, backstop, lid pack, hotkey, ledger
+Sources/HODL/System   Assertions, power, recovery journal, backstop, quiet mode, hotkey, ledger
 Sources/HODL/Agents   Process scanner, agent monitor, hook installer, App Nap
 Sources/HODL/UI       Menu panel, session window, Settings, About
 Scripts/              hodl, hodl-run, hodl-hook (bundled into the app)

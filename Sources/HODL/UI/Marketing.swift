@@ -129,7 +129,7 @@ private struct Banners: View {
 private struct LedgerCard: View {
     private let rows: [(String, String, String)] = [
         ("11:48 PM", "Awake", "Awake until 7:00 AM · from menu"),
-        ("12:03 AM", "Lid pack", "dimmed · keyboard light off · muted · paused Slack"),
+        ("12:03 AM", "Quiet mode", "dimmed · keyboard light off · muted · paused Slack"),
         ("2:41 AM", "Low power", "Turned on Low Power Mode (battery at 40%)."),
         ("6:12 AM", "Stopped", "Every agent finished and stayed idle past the timeout."),
         ("6:12 AM", "Restore", "Resumed apps and restored sound and brightness."),

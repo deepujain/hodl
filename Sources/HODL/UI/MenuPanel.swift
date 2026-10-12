@@ -238,16 +238,15 @@ struct MenuPanel: View {
     /// What the five switches below add up to, in plain words.
     private var switchSummary: String {
         guard let session = engine.session else {
-            return adaptive
-                ? "Off: the Mac sleeps as usual. Turn on Stay Awake to keep it awake while agents work."
-                : "Off: the Mac sleeps as usual. Turn on Stay Awake to keep it awake overnight."
+            return "Stay Awake is off, so the Mac sleeps as usual. The other switches apply once it’s on."
         }
-        let left = engine.remaining.map { "for \(HoldEngine.format($0)) more" } ?? "with no time limit"
-        var parts = [session.adaptive ? "Awake while agents work, then sleeps." : "Awake \(left), even after agents finish."]
-        if displayOff { parts.append("Screen off.") }
-        if lidPack { parts.append("Lid closed: dims, mutes, pauses chat apps.") }
-        if playSounds { parts.append("Sound when it stops.") }
-        return parts.joined(separator: " ")
+        let left = engine.remaining.map { "for \(HoldEngine.format($0))" } ?? "with no time limit"
+        return [
+            session.adaptive ? "Stays awake until agents finish." : "Stays awake \(left), even after agents finish.",
+            displayOff ? "Screen off." : "Screen on.",
+            lidPack ? "Closing the lid dims, mutes, and pauses chat apps." : "Closing the lid leaves sound and apps alone.",
+            playSounds ? "Sounds on." : "Sounds off.",
+        ].joined(separator: " ")
     }
 
     // MARK: Switches
@@ -262,8 +261,8 @@ struct MenuPanel: View {
                         help: "Stay awake only while an agent is working, and let the Mac sleep once it has been idle for a while.")
             QuickSwitch(symbol: "display", title: "Display Off", isOn: $displayOff,
                         help: "Turn the display off once the Mac is set to stay awake. It keeps running.")
-            QuickSwitch(symbol: "laptopcomputer.and.arrow.down", title: "Lid Pack", isOn: $lidPack,
-                        help: "When the lid closes: dim, mute, and pause Slack, Discord, and WhatsApp. Agents are never paused.")
+            QuickSwitch(symbol: "laptopcomputer.and.arrow.down", title: "Quiet Mode", isOn: $lidPack,
+                        help: "When you close the lid: dim the screen and keyboard light, mute sound, and pause Slack, Discord, and WhatsApp. Agents are never paused. Everything comes back when you open it.")
             QuickSwitch(symbol: playSounds ? "speaker.wave.2.fill" : "speaker.slash.fill", title: "Sounds", isOn: $playSounds,
                         help: "Soft sounds when staying awake starts and ends.")
         }

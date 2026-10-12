@@ -196,7 +196,7 @@ struct SettingsView: View {
                 }
             }
             Section("When the lid closes while awake") {
-                Toggle("Use the lid pack", isOn: $lidPack)
+                Toggle("Quiet Mode", isOn: $lidPack)
                 Group {
                     Toggle("Dim the display and keyboard light", isOn: $packDim)
                     Toggle("Mute sound", isOn: $packMute)
