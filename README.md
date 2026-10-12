@@ -17,6 +17,19 @@
 
 Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL to Applications, then right-click it and choose **Open** the first time; the build isn’t notarized yet.
 
+## Which switches to turn on
+
+| I want… | 🌙 Stay Awake | ✨ Agents Only | 🖥️ Display Off | 💻 Lid Pack |
+|---|:---:|:---:|:---:|:---:|
+| ⭐ **Lid closed, Mac awake overnight while agents run** | ✅ On | ✅ On | Doesn’t matter | ✅ On |
+| **Lid open, Mac awake overnight while agents run** | ✅ On | ✅ On | ✅ On | Doesn’t matter |
+| **Mac awake for 8 hours, agents or not** | ✅ On | Off | ✅ On | ✅ On |
+| **Normal Mac, sleeps as usual** | Off | Doesn’t matter | Doesn’t matter | Doesn’t matter |
+
+On is blue in the panel; Off is grey. **Stay Awake** is the main switch: nothing else keeps the Mac awake on its own. **Agents Only** lets the Mac sleep about 10 minutes after your agents finish, instead of after 8 hours. **Display Off** only turns the screen off. **Lid Pack** only acts when the lid closes: it dims, mutes, and pauses chat apps, and puts them back when the lid opens.
+
+Whatever you choose, the Mac still sleeps at 15% battery or if it gets too hot. With the lid closed on battery, macOS sleeps unless you turn on the closed-lid helper once in **Settings › Lid & Display**; plugged in, nothing else is needed.
+
 ## Build
 
 ```bash
