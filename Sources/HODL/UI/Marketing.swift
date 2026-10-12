@@ -16,13 +16,14 @@ enum Marketing {
         power.stage(percent: 82, onAC: false, lidClosed: false)
         agents.stage(["claude": .active, "codex": .active, "cursor": .active, "aider": .idle, "pi": .off])
         let holding = MenuPanel(engine: engine, agents: agents, power: power)
-        write(holding.panelChrome(dark: false, shadow: false), name: "shot-menu", size: nil)
-        write(Stage { holding.panelChrome(dark: true) }, name: "shot-hold", size: CGSize(width: 800, height: 600))
+        write(Stage(photo: .detail) { holding.panelChrome(dark: false) }, name: "shot-menu", size: CGSize(width: 560, height: 620))
+        write(Stage(photo: .evening, alignment: .trailing) { holding.panelChrome(dark: true) },
+              name: "shot-hold", size: CGSize(width: 800, height: 600))
         write(Poster(panel: holding.panelChrome(dark: true)), name: "hodl-poster", size: CGSize(width: 1280, height: 800))
 
-        write(Stage(spacing: 0) { LidClosedScene() }, name: "shot-lid", size: CGSize(width: 800, height: 600))
-        write(Stage { Banners() }, name: "shot-done", size: CGSize(width: 800, height: 600))
-        write(LedgerCard(), name: "shot-ledger", size: nil)
+        write(Stage(photo: .icon, alignment: .bottom) { LidPill() }, name: "shot-lid", size: CGSize(width: 800, height: 600))
+        write(Stage(photo: .sunrise, alignment: .top) { Banners() }, name: "shot-done", size: CGSize(width: 800, height: 600))
+        write(Stage(photo: .detail, alignment: .bottom) { LedgerCard() }, name: "shot-ledger", size: CGSize(width: 760, height: 420))
         write(AppIconArtwork(), name: "hodl-icon", size: nil, scale: 1)
     }
 
@@ -49,53 +50,32 @@ private extension MenuPanel {
     }
 }
 
-/// The night sky behind every image.
-private struct NightSky: View {
+/// A photograph filling the frame behind the real UI.
+private struct Backdrop: View {
+    let photo: Photo
+
     var body: some View {
-        ZStack {
-            LinearGradient(colors: [Color(red: 0.05, green: 0.06, blue: 0.17), Color(red: 0.17, green: 0.13, blue: 0.38)],
-                           startPoint: .top, endPoint: .bottom)
-            GeometryReader { proxy in
-                ForEach(0..<36, id: \.self) { index in
-                    let x = Double((index * 73) % 100) / 100, y = Double((index * 37) % 61) / 100
-                    Circle()
-                        .fill(.white.opacity(0.25 + Double(index % 4) * 0.15))
-                        .frame(width: CGFloat(2 + index % 3), height: CGFloat(2 + index % 3))
-                        .position(x: proxy.size.width * x, y: proxy.size.height * y)
-                }
-            }
-        }
+        Color.black.overlay { photo.image.resizable().interpolation(.high).scaledToFill() }.clipped()
     }
 }
 
 private struct Stage<Content: View>: View {
-    var spacing: CGFloat = 40
+    let photo: Photo
+    var alignment: Alignment = .center
     @ViewBuilder let content: Content
 
     var body: some View {
-        ZStack {
-            NightSky()
-            content.padding(spacing)
+        ZStack(alignment: alignment) {
+            Backdrop(photo: photo)
+            content.padding(40)
         }
         .environment(\.colorScheme, .dark)
     }
 }
 
-/// The laptop from the icon, lid held open a crack, with a status pill above it.
-private struct LidClosedScene: View {
+/// The status a closed-lid hold shows, over the photo of the lid.
+private struct LidPill: View {
     var body: some View {
-        ZStack {
-            IconMark()
-                .frame(width: 824, height: 824)
-                .scaleEffect(0.9)
-                .offset(y: -40)
-            pill.offset(y: 215)
-        }
-        .frame(width: 800, height: 600)
-        .clipped()
-    }
-
-    private var pill: some View {
         HStack(spacing: 10) {
             Image(systemName: "moon.zzz.fill").foregroundStyle(Color(red: 0.45, green: 0.98, blue: 0.80))
             Text(verbatim: "Holding · lid closed · 3 agents working")
@@ -182,11 +162,7 @@ private struct Poster<Panel: View>: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            NightSky()
-            IconMark()
-                .frame(width: 824, height: 824)
-                .scaleEffect(0.82)
-                .position(x: 400, y: 430)
+            Backdrop(photo: .hero)
             menuBar
             panel
                 .scaleEffect(0.98, anchor: .topTrailing)

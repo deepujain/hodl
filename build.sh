@@ -24,6 +24,7 @@ else
 fi
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 cp Resources/PrivacyInfo.xcprivacy "$APP/Contents/Resources/PrivacyInfo.xcprivacy"
+cp Resources/IconPhoto.jpg "$APP/Contents/Resources/IconPhoto.jpg"
 for tool in hodl hodl-run hodl-hook; do
   install -m 0755 "Scripts/$tool" "$APP/Contents/Resources/bin/$tool"
 done

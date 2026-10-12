@@ -20,8 +20,8 @@ struct AboutView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(width: 284)
                     .padding(.top, 4)
-                    .padding(.horizontal, 28)
             }
 
             HStack(spacing: 10) {
