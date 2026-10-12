@@ -37,7 +37,7 @@ enum Prefs {
             sessionHours: 8.0,
             maxHours: 12.0,
             allowUnlimited: false,
-            adaptive: false,
+            adaptive: true,
             idleMinutes: 10,
             powerMode: PowerMode.adaptive.rawValue,
             lidPolicy: LidPolicy.either.rawValue,
@@ -59,7 +59,7 @@ enum Prefs {
             watchedApps: [String](),
             closedLidOnBattery: false,
             caffeinateAlways: false,
-            playSounds: true,
+            playSounds: false,
             notifications: true,
             hotkey: true,
         ])

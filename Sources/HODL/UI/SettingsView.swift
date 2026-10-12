@@ -7,7 +7,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.sessionHours) private var sessionHours = 8.0
     @AppStorage(Prefs.maxHours) private var maxHours = 12.0
     @AppStorage(Prefs.allowUnlimited) private var allowUnlimited = false
-    @AppStorage(Prefs.adaptive) private var adaptive = false
+    @AppStorage(Prefs.adaptive) private var adaptive = true
     @AppStorage(Prefs.idleMinutes) private var idleMinutes = 10
     @AppStorage(Prefs.powerMode) private var powerMode = PowerMode.adaptive
     @AppStorage(Prefs.lidPolicy) private var lidPolicy = LidPolicy.either
@@ -28,7 +28,7 @@ struct SettingsView: View {
     @AppStorage(Prefs.preventLock) private var preventLock = false
     @AppStorage(Prefs.closedLidOnBattery) private var closedLidOnBattery = false
     @AppStorage(Prefs.caffeinateAlways) private var caffeinateAlways = false
-    @AppStorage(Prefs.playSounds) private var playSounds = true
+    @AppStorage(Prefs.playSounds) private var playSounds = false
     @AppStorage(Prefs.notifications) private var notifications = true
     @AppStorage(Prefs.hotkey) private var hotkey = true
 

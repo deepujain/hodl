@@ -6,11 +6,11 @@ struct MenuPanel: View {
     let agents: AgentMonitor
     let power: PowerMonitor
 
-    @AppStorage(Prefs.adaptive) private var adaptive = false
+    @AppStorage(Prefs.adaptive) private var adaptive = true
     @AppStorage(Prefs.displayOff) private var displayOff = false
     @AppStorage(Prefs.lidPack) private var lidPack = false
     @AppStorage(Prefs.closedLidOnBattery) private var closedLidOnBattery = false
-    @AppStorage(Prefs.playSounds) private var playSounds = true
+    @AppStorage(Prefs.playSounds) private var playSounds = false
     @AppStorage(Prefs.powerMode) private var powerMode = PowerMode.adaptive
     @AppStorage(Prefs.lidPolicy) private var lidPolicy = LidPolicy.either
     @AppStorage(Prefs.batteryFloor) private var batteryFloor = 15
