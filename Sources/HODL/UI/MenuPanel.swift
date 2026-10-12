@@ -9,6 +9,7 @@ struct MenuPanel: View {
     @AppStorage(Prefs.adaptive) private var adaptive = false
     @AppStorage(Prefs.displayOff) private var displayOff = false
     @AppStorage(Prefs.lidPack) private var lidPack = false
+    @AppStorage(Prefs.closedLidOnBattery) private var closedLidOnBattery = false
     @AppStorage(Prefs.playSounds) private var playSounds = true
     @AppStorage(Prefs.powerMode) private var powerMode = PowerMode.adaptive
     @AppStorage(Prefs.lidPolicy) private var lidPolicy = LidPolicy.either
@@ -237,16 +238,20 @@ struct MenuPanel: View {
 
     /// What the five switches below add up to, in plain words.
     private var switchSummary: String {
-        guard let session = engine.session else {
-            return "Stay Awake is off, so the Mac sleeps as usual. The other switches apply once it’s on."
-        }
+        guard let session = engine.session else { return "Your Mac will sleep as usual, even while agents work." }
         let left = engine.remaining.map { "for \(HoldEngine.format($0))" } ?? "with no time limit"
-        return [
-            session.adaptive ? "Stays awake until agents finish." : "Stays awake \(left), even after agents finish.",
-            displayOff ? "Screen off." : "Screen on.",
-            lidPack ? "Closing the lid dims, mutes, and pauses chat apps." : "Closing the lid leaves sound and apps alone.",
-            playSounds ? "Sounds on." : "Sounds off.",
-        ].joined(separator: " ")
+        var parts = [session.adaptive ? "Your Mac stays awake until your agents finish, then sleeps."
+                                      : "Your Mac stays awake \(left), even after your agents finish."]
+        if lidPolicy == .open {
+            parts.append("Closing the lid puts it to sleep.")
+        } else if power.hasBattery, !power.onAC, !closedLidOnBattery {
+            parts.append("On battery, closing the lid puts it to sleep.")
+        } else if lidPack {
+            parts.append("Closing the lid dims it, mutes it, and pauses chat apps.")
+        }
+        if displayOff { parts.append("The screen turns off.") }
+        if playSounds { parts.append("You’ll hear a chime when it stops.") }
+        return parts.joined(separator: " ")
     }
 
     // MARK: Switches
@@ -261,7 +266,7 @@ struct MenuPanel: View {
                         help: "Stay awake only while an agent is working, and let the Mac sleep once it has been idle for a while.")
             QuickSwitch(symbol: "display", title: "Display Off", isOn: $displayOff,
                         help: "Turn the display off once the Mac is set to stay awake. It keeps running.")
-            QuickSwitch(symbol: "laptopcomputer.and.arrow.down", title: "Quiet Mode", isOn: $lidPack,
+            QuickSwitch(symbol: "bell.slash.fill", title: "Quiet Mode", isOn: $lidPack,
                         help: "When you close the lid: dim the screen and keyboard light, mute sound, and pause Slack, Discord, and WhatsApp. Agents are never paused. Everything comes back when you open it.")
             QuickSwitch(symbol: playSounds ? "speaker.wave.2.fill" : "speaker.slash.fill", title: "Sounds", isOn: $playSounds,
                         help: "Soft sounds when staying awake starts and ends.")

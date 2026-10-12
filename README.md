@@ -13,13 +13,13 @@
 
 ## Download
 
-**[Download HODL 1.0.2](https://github.com/deepujain/hodl/releases/download/v1.0.2/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.2) · [website](https://1xaispark.com/apps/hodl.html)
+**[Download HODL 1.0.3](https://github.com/deepujain/hodl/releases/download/v1.0.3/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.3) · [website](https://1xaispark.com/apps/hodl.html)
 
 Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL to Applications, then right-click it and choose **Open** the first time; the build isn’t notarized yet.
 
 ## Which switches to turn on
 
-| I want… | 🌙 Stay Awake | ✨ Agents Only | 🖥️ Display Off | 🤫 Quiet Mode |
+| I want… | 🌙 Stay Awake | ✨ Agents Only | 🖥️ Display Off | 🔕 Quiet Mode |
 |---|:---:|:---:|:---:|:---:|
 | ⭐ **Lid closed, Mac awake overnight while agents run** | ✅ On | ✅ On | Doesn’t matter | ✅ On |
 | **Lid open, Mac awake overnight while agents run** | ✅ On | ✅ On | ✅ On | Doesn’t matter |

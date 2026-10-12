@@ -9,7 +9,7 @@ enum Marketing {
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         output = folder
         MenuPanel.drawsFlat = true
-        UserDefaults.standard.register(defaults: [Prefs.lidPack: true, Prefs.adaptive: false])
+        UserDefaults.standard.register(defaults: [Prefs.lidPack: true, Prefs.adaptive: false, Prefs.closedLidOnBattery: true])
         let engine = HoldEngine.shared, agents = AgentMonitor.shared, power = PowerMonitor.shared
 
         engine.stage(endsIn: 7 * 3600 + 42 * 60)
