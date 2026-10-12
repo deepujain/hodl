@@ -37,17 +37,17 @@ enum AppIconRenderer {
     }
 }
 
-/// Night, a crescent moon, and a MacBook in profile with its lid held open a crack, light still on inside.
+/// Hold the Door Lid, literally: a rubber doorstop wedged under a MacBook lid, light still on inside.
 struct AppIconArtwork: View {
     private let shape = RoundedRectangle(cornerRadius: 186, style: .continuous)
 
     var body: some View {
         ZStack {
             shape
-                .fill(LinearGradient(colors: [Color(red: 0.07, green: 0.09, blue: 0.24), Color(red: 0.20, green: 0.16, blue: 0.46)],
+                .fill(LinearGradient(colors: [Color(red: 0.31, green: 0.43, blue: 1.0), Color(red: 0.50, green: 0.30, blue: 0.92)],
                                      startPoint: .top, endPoint: .bottom))
-                .overlay { NightMark().clipShape(shape) }
-                .overlay(shape.strokeBorder(.white.opacity(0.10), lineWidth: 3))
+                .overlay { IconMark().clipShape(shape) }
+                .overlay(shape.strokeBorder(.white.opacity(0.14), lineWidth: 3))
                 .frame(width: 824, height: 824)
                 .shadow(color: .black.opacity(0.3), radius: 22, y: 12)
         }
@@ -55,47 +55,41 @@ struct AppIconArtwork: View {
     }
 }
 
-struct NightMark: View {
-    private let moonLight = Color(red: 1.0, green: 0.93, blue: 0.76)
-    private let glow = Color(red: 0.45, green: 0.98, blue: 0.80)
-    private let aluminum = LinearGradient(colors: [Color(white: 0.96), Color(white: 0.72)], startPoint: .top, endPoint: .bottom)
+/// The icon’s foreground in its 824-point space: moon, laptop, and doorstop. Marketing scenes reuse it.
+struct IconMark: View {
+    private let moonLight = Color(red: 1.0, green: 0.94, blue: 0.80)
+    private let screenLight = Color(red: 0.80, green: 0.92, blue: 1.0)
+    private let aluminum = LinearGradient(colors: [Color(white: 0.98), Color(white: 0.76)], startPoint: .top, endPoint: .bottom)
+    private let rubber = LinearGradient(colors: [Color(red: 1.0, green: 0.66, blue: 0.24), Color(red: 0.94, green: 0.38, blue: 0.10)],
+                                        startPoint: .top, endPoint: .bottom)
 
-    // Side view of the laptop, in the 824-point icon space.
-    private let hinge = CGPoint(x: 132, y: 586)
-    private let length: CGFloat = 560
-    private let angle = Angle.degrees(-8)
+    private let hinge = CGPoint(x: 96, y: 590)
+    private let length: CGFloat = 590
+    private let angle = Angle.degrees(-14)
+    /// Where the doorstop starts under the lid, and how far it sticks out past the front.
+    private let wedgeStart: CGFloat = 340
+    private let wedgeEnd: CGFloat = 712
+
+    private var lift: CGFloat { length * CGFloat(sin(-angle.radians)) }
+    private var reach: CGFloat { length * CGFloat(cos(angle.radians)) }
+    private var lidFront: CGPoint { CGPoint(x: hinge.x + reach, y: hinge.y - lift) }
 
     var body: some View {
         ZStack {
-            ForEach(Array([(150.0, 160.0, 9.0), (250, 300, 6), (330, 120, 7), (700, 440, 6), (170, 450, 5), (640, 150, 5)].enumerated()), id: \.offset) { _, star in
-                Circle().fill(.white.opacity(0.75)).frame(width: star.2, height: star.2).position(x: star.0, y: star.1)
+            ForEach(Array([(560.0, 120.0, 9.0), (680, 210, 7), (470, 250, 6), (130, 330, 6)].enumerated()), id: \.offset) { _, star in
+                Circle().fill(.white.opacity(0.8)).frame(width: star.2, height: star.2).position(x: star.0, y: star.1)
             }
-            Circle()
-                .fill(RadialGradient(colors: [moonLight.opacity(0.16), moonLight.opacity(0)], center: .center, startRadius: 80, endRadius: 260))
-                .frame(width: 520, height: 520)
-                .position(x: 470, y: 280)
-            Circle()
-                .fill(LinearGradient(colors: [.white, moonLight], startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: 280, height: 280)
-                .mask {
-                    ZStack {
-                        Rectangle()
-                        Circle().frame(width: 250, height: 250).offset(x: 92, y: -62).blendMode(.destinationOut)
-                    }
-                    .compositingGroup()
-                }
-                .position(x: 450, y: 280)
+            moon.position(x: 230, y: 230)
 
-            // Light from the open crack, falling forward.
-            Ellipse()
-                .fill(RadialGradient(colors: [glow.opacity(0.32), glow.opacity(0)], center: .center, startRadius: 2, endRadius: 150))
-                .frame(width: 300, height: 70)
-                .blur(radius: 10)
-                .position(x: hinge.x + length + 10, y: hinge.y + 40)
+            // Soft shadow on the desk.
+            Ellipse().fill(.black.opacity(0.28)).frame(width: 640, height: 50).blur(radius: 18)
+                .position(x: hinge.x + length / 2 + 30, y: hinge.y + 52)
+            // Screen light in the gap, behind the doorstop.
             gap
-                .fill(LinearGradient(colors: [glow.opacity(0.15), glow, .white], startPoint: .leading, endPoint: .trailing))
-                .shadow(color: glow.opacity(0.9), radius: 26)
-            // Lid, pivoting on the hinge.
+                .fill(LinearGradient(colors: [screenLight.opacity(0.2), screenLight, .white], startPoint: .leading, endPoint: .trailing))
+                .shadow(color: screenLight.opacity(0.9), radius: 30)
+            doorstop
+            // Lid, resting on the doorstop.
             RoundedRectangle(cornerRadius: 13, style: .continuous)
                 .fill(aluminum)
                 .frame(width: length, height: 26)
@@ -103,24 +97,57 @@ struct NightMark: View {
                 .rotationEffect(angle, anchor: .bottomLeading)
                 .position(x: hinge.x + length / 2, y: hinge.y - 13)
             // Base.
-            RoundedRectangle(cornerRadius: 17, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(aluminum)
-                .frame(width: length + 8, height: 36)
-                .overlay(alignment: .bottom) { Capsule().fill(Color(white: 0.5)).frame(width: length - 70, height: 4).offset(y: 3) }
-                .shadow(color: .black.opacity(0.45), radius: 18, y: 12)
-                .position(x: hinge.x + length / 2, y: hinge.y + 18)
+                .frame(width: length + 12, height: 40)
+                .overlay(alignment: .bottom) { Capsule().fill(Color(white: 0.55)).frame(width: length - 80, height: 4).offset(y: 3) }
+                .position(x: hinge.x + length / 2 + 6, y: hinge.y + 20)
         }
     }
 
-    /// Between the lid’s underside and the base: nothing at the hinge, wide open at the front.
+    private var moon: some View {
+        Circle()
+            .fill(LinearGradient(colors: [.white, moonLight], startPoint: .topLeading, endPoint: .bottomTrailing))
+            .frame(width: 190, height: 190)
+            .mask {
+                ZStack {
+                    Rectangle()
+                    Circle().frame(width: 170, height: 170).offset(x: 62, y: -42).blendMode(.destinationOut)
+                }
+                .compositingGroup()
+            }
+            .shadow(color: moonLight.opacity(0.5), radius: 30)
+    }
+
+    /// Between the lid’s underside and the base: nothing at the hinge, open at the front.
     private var gap: Path {
-        let lift = length * CGFloat(sin(-angle.radians))
-        let reach = length * CGFloat(cos(angle.radians))
         var path = Path()
-        path.move(to: CGPoint(x: hinge.x + 6, y: hinge.y))
-        path.addLine(to: CGPoint(x: hinge.x + reach - 4, y: hinge.y - lift + 3))
-        path.addLine(to: CGPoint(x: hinge.x + reach - 4, y: hinge.y))
+        path.move(to: CGPoint(x: hinge.x + 8, y: hinge.y))
+        path.addLine(to: CGPoint(x: lidFront.x - 4, y: lidFront.y + 4))
+        path.addLine(to: CGPoint(x: lidFront.x - 4, y: hinge.y))
         path.closeSubpath()
         return path
+    }
+
+    /// A rubber wedge on the base whose slope meets the lid’s front edge, so the lid rests on it.
+    private var doorstop: some View {
+        let rise = (hinge.y - lidFront.y + 8) / (lidFront.x - wedgeStart)
+        let height = (wedgeEnd - wedgeStart) * rise
+        let wedge = Path { path in
+            path.move(to: CGPoint(x: wedgeStart, y: hinge.y))
+            path.addLine(to: CGPoint(x: wedgeEnd - 14, y: hinge.y - height + 6))
+            path.addQuadCurve(to: CGPoint(x: wedgeEnd, y: hinge.y - height + 22), control: CGPoint(x: wedgeEnd, y: hinge.y - height))
+            path.addLine(to: CGPoint(x: wedgeEnd, y: hinge.y))
+            path.closeSubpath()
+        }
+        return wedge.fill(rubber)
+            .overlay {
+                Path { path in
+                    path.move(to: CGPoint(x: wedgeStart + 30, y: hinge.y - 4))
+                    path.addLine(to: CGPoint(x: wedgeEnd - 18, y: hinge.y - height + 14))
+                }
+                .stroke(.white.opacity(0.35), style: StrokeStyle(lineWidth: 5, lineCap: .round))
+            }
+            .shadow(color: .black.opacity(0.3), radius: 12, y: 8)
     }
 }

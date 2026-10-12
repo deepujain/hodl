@@ -85,7 +85,7 @@ private struct Stage<Content: View>: View {
 private struct LidClosedScene: View {
     var body: some View {
         ZStack {
-            NightMark()
+            IconMark()
                 .frame(width: 824, height: 824)
                 .scaleEffect(0.9)
                 .offset(y: -40)
@@ -183,7 +183,7 @@ private struct Poster<Panel: View>: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             NightSky()
-            NightMark()
+            IconMark()
                 .frame(width: 824, height: 824)
                 .scaleEffect(0.82)
                 .position(x: 400, y: 430)
