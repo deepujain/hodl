@@ -80,7 +80,7 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
-            holdTab.tabItem { Label("Hold", systemImage: "moon.zzz") }
+            holdTab.tabItem { Label("Awake", systemImage: "moon.zzz") }
             safetyTab.tabItem { Label("Safety", systemImage: "shield.lefthalf.filled") }
             lidTab.tabItem { Label("Lid & Display", systemImage: "laptopcomputer") }
             agentsTab.tabItem { Label("Agents", systemImage: "sparkles") }
@@ -99,19 +99,19 @@ struct SettingsView: View {
     private var holdTab: some View {
         Form {
             Section("Session") {
-                Picker("Hold overnight for", selection: $sessionHours) {
+                Picker("Stay awake overnight for", selection: $sessionHours) {
                     ForEach([4.0, 6, 8, 10, 12], id: \.self) { Text("\(Int($0)) hours").tag($0) }
                 }
-                Picker("Never hold longer than", selection: $maxHours) {
+                Picker("Never stay awake longer than", selection: $maxHours) {
                     ForEach([8.0, 10, 12, 16, 24], id: \.self) { Text("\(Int($0)) hours").tag($0) }
                 }
                 Toggle("Offer a session with no time limit", isOn: $allowUnlimited)
-                Text("A no-limit hold still stops for battery, heat, and unplugging, and is restored if HODL quits or crashes.")
+                Text("With no time limit, HODL still lets the Mac sleep for battery, heat, and unplugging, and restores normal sleep if it quits or crashes.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Agents Only") {
-                Toggle("Hold only while an agent is working", isOn: $adaptive)
-                Picker("Let go after agents are idle for", selection: $idleMinutes) {
+                Toggle("Stay awake only while an agent is working", isOn: $adaptive)
+                Picker("Let the Mac sleep after agents are idle for", selection: $idleMinutes) {
                     ForEach([2, 5, 10, 15, 20, 30], id: \.self) { Text("\($0) minutes").tag($0) }
                 }
                 .disabled(!adaptive)
@@ -122,7 +122,7 @@ struct SettingsView: View {
                 }
                 Text(powerMode.detail).font(.caption).foregroundStyle(.secondary)
             }
-            Section("Hold while an app runs") {
+            Section("Stay awake while an app runs") {
                 ForEach(watchedApps, id: \.self) { id in
                     HStack {
                         if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) {
@@ -136,7 +136,7 @@ struct SettingsView: View {
                     }
                 }
                 Button("Add App…") { chooseApp() }
-                Text("When one of these apps opens, HODL holds until it quits, up to the longest hold you allow. A training run, a render, or a long download keeps the Mac awake on its own.")
+                Text("When one of these apps opens, HODL keeps the Mac awake until it quits, up to the longest time you allow. A training run, a render, or a long download keeps the Mac awake on its own.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -147,7 +147,7 @@ struct SettingsView: View {
     private var safetyTab: some View {
         Form {
             Section("Battery") {
-                Picker("Stop holding at", selection: $batteryFloor) {
+                Picker("Let the Mac sleep at", selection: $batteryFloor) {
                     ForEach([5, 10, 15, 20, 25, 30], id: \.self) { Text("\($0)%").tag($0) }
                 }
                 Picker("Turn on Low Power Mode at", selection: $softFloor) {
@@ -158,12 +158,12 @@ struct SettingsView: View {
                     Text("Any level").tag(0)
                     ForEach([30, 50, 70], id: \.self) { Text("\($0)%").tag($0) }
                 }
-                Text("If the battery level can’t be read while on battery, HODL lets go rather than guess. Low Power Mode needs the closed-lid helper below.")
+                Text("If the battery level can’t be read while on battery, HODL lets the Mac sleep rather than guess. Low Power Mode needs the closed-lid helper below.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Heat") {
                 Toggle("Let the Mac rest when it gets hot", isOn: $thermalGuard)
-                Text("HODL turns on Low Power Mode when macOS reports serious heat, lets go if it lasts 10 minutes, and lets go at once if it becomes critical.")
+                Text("HODL turns on Low Power Mode when macOS reports serious heat, lets the Mac sleep if it lasts 10 minutes, and at once if it becomes critical.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {
@@ -177,13 +177,13 @@ struct SettingsView: View {
     private var lidTab: some View {
         Form {
             Section("Lid") {
-                Picker("Hold when the lid is", selection: $lidPolicy) {
+                Picker("Stay awake when the lid is", selection: $lidPolicy) {
                     ForEach(LidPolicy.allCases) { Text($0.title).tag($0) }
                 }
                 Text(lidPolicy.detail).font(.caption).foregroundStyle(.secondary)
-                Toggle("Keep holding with the lid closed on battery", isOn: $closedLidOnBattery)
+                Toggle("Stay awake with the lid closed on battery", isOn: $closedLidOnBattery)
                     .disabled(!helperInstalled)
-                Text("On AC power HODL’s sleep assertions keep the Mac awake with the lid closed. On battery, macOS sleeps on lid close no matter what, unless lid-close sleep is switched off with `pmset disablesleep`. HODL turns it off only during a hold, journals it first, and always turns it back on, even after a crash.")
+                Text("On AC power HODL’s sleep assertions keep the Mac awake with the lid closed. On battery, macOS sleeps on lid close no matter what, unless lid-close sleep is switched off with `pmset disablesleep`. HODL turns it off only while keeping the Mac awake, journals it first, and always turns it back on, even after a crash.")
                     .font(.caption).foregroundStyle(.secondary)
                 LabeledContent("Closed-lid helper") {
                     HStack {
@@ -197,7 +197,7 @@ struct SettingsView: View {
                     Text(verbatim: helperError).font(.caption).foregroundStyle(.orange)
                 }
             }
-            Section("When the lid closes during a hold") {
+            Section("When the lid closes while awake") {
                 Toggle("Use the lid pack", isOn: $lidPack)
                 Group {
                     Toggle("Dim the display and keyboard light", isOn: $packDim)
@@ -208,14 +208,14 @@ struct SettingsView: View {
                     Toggle("Lock the screen", isOn: $packLock)
                 }
                 .disabled(!lidPack)
-                Text("Agents, terminals, meeting apps (Zoom, Teams, Webex, FaceTime, OBS, Loom), browsers, editors, and Apple’s own apps are never paused. Everything resumes when the lid opens or the hold ends. On Apple silicon the built-in microphone disconnects while the lid is closed.")
+                Text("Agents, terminals, meeting apps (Zoom, Teams, Webex, FaceTime, OBS, Loom), browsers, editors, and Apple’s own apps are never paused. Everything resumes when the lid opens or HODL turns off. On Apple silicon the built-in microphone disconnects while the lid is closed.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("Display") {
-                Toggle("Turn the display off when a hold starts", isOn: $displayOff)
+                Toggle("Turn the display off when HODL turns on", isOn: $displayOff)
                 Toggle("Keep the display on", isOn: $keepDisplayAwake)
                 Toggle("Prevent the screen saver and screen lock", isOn: $preventLock)
-                Text("Off, macOS starts the screen saver and locks the screen as usual while your agents keep working. On, HODL tells macOS someone is there every 30 seconds, so neither starts until the hold ends.")
+                Text("Off, macOS starts the screen saver and locks the screen as usual while your agents keep working. On, HODL tells macOS someone is there every 30 seconds, so neither starts until HODL turns off.")
                     .font(.caption).foregroundStyle(.secondary)
                 Picker("Turn the display off after agents finish", selection: $displayOffAfterAgents) {
                     Text("Never").tag(0)
@@ -264,7 +264,7 @@ struct SettingsView: View {
             Section("Command line") {
                 Text(verbatim: "hodl hold --until agents-idle\nhodl status\nhodl-run -- <command>")
                     .font(.system(.caption, design: .monospaced)).textSelection(.enabled)
-                Text("`hodl-run` keeps a hold alive while a command runs, with a heartbeat to 127.0.0.1:8742. The tools install to ~/.local/bin.")
+                Text("`hodl-run` keeps the Mac awake while a command runs, with a heartbeat to 127.0.0.1:8742. The tools install to ~/.local/bin.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -286,7 +286,7 @@ struct SettingsView: View {
                         launchAtLogin = SMAppService.mainApp.status == .enabled
                     }
                 ))
-                Toggle("Toggle the hold with ⌥⌘L", isOn: $hotkey)
+                Toggle("Turn HODL on or off with ⌥⌘L", isOn: $hotkey)
                 Toggle("Show notifications", isOn: $notifications)
                 Toggle("Play sounds", isOn: $playSounds)
                 Toggle("Also run caffeinate as a backup", isOn: $caffeinateAlways)
@@ -297,7 +297,7 @@ struct SettingsView: View {
                 LabeledContent("Remove HODL from this Mac") {
                     Button("Uninstall…", role: .destructive) { Uninstaller.run() }
                 }
-                Text("Removes hooks, command-line tools, the closed-lid helper, and the login item, then moves HODL to the Trash. HODL won’t uninstall while a hold is running or something is still waiting to be put back.")
+                Text("Removes hooks, command-line tools, the closed-lid helper, and the login item, then moves HODL to the Trash. HODL won’t uninstall while it’s keeping the Mac awake or something is still waiting to be put back.")
                     .font(.caption).foregroundStyle(.secondary)
             } footer: {
                 VStack(spacing: 6) {

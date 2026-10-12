@@ -78,7 +78,7 @@ private struct LidPill: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "moon.zzz.fill").foregroundStyle(Color(red: 0.45, green: 0.98, blue: 0.80))
-            Text(verbatim: "Holding · lid closed · 3 agents working")
+            Text(verbatim: "Awake · lid closed · 3 agents working")
                 .font(.system(size: 22, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
         }
@@ -96,8 +96,8 @@ private struct Banners: View {
         VStack(spacing: 14) {
             banner(time: "6:12 AM", title: "Agents finished",
                    body: "Every agent finished and stayed idle past the timeout. The Mac can sleep normally now.")
-            banner(time: "11:48 PM", title: "HODL is holding",
-                   body: "Holding until 7:00 AM. Keep the Mac on a desk or stand, not in a closed bag.")
+            banner(time: "11:48 PM", title: "Keeping your Mac awake",
+                   body: "Awake until 7:00 AM. Keep the Mac on a desk or stand, not in a closed bag.")
                 .opacity(0.85)
                 .scaleEffect(0.96)
         }
@@ -126,10 +126,10 @@ private struct Banners: View {
 /// The history a night leaves behind: every change, and every undo.
 private struct LedgerCard: View {
     private let rows: [(String, String, String)] = [
-        ("11:48 PM", "Hold", "Holding until 7:00 AM · from menu"),
+        ("11:48 PM", "Awake", "Awake until 7:00 AM · from menu"),
         ("12:03 AM", "Lid pack", "dimmed · keyboard light off · muted · paused Slack"),
         ("2:41 AM", "Low power", "Turned on Low Power Mode (battery at 40%)."),
-        ("6:12 AM", "Release", "Every agent finished and stayed idle past the timeout."),
+        ("6:12 AM", "Stopped", "Every agent finished and stayed idle past the timeout."),
         ("6:12 AM", "Restore", "Resumed apps and restored sound and brightness."),
     ]
 

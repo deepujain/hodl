@@ -81,6 +81,6 @@ enum Prefs {
         set { store.set(newValue, forKey: watchedApps) }
     }
 
-    /// The session length a plain "Hold" uses, never beyond the hard maximum.
+    /// The session length a plain "Stay Awake" uses, never beyond the hard maximum.
     static var defaultSession: TimeInterval { min(double(sessionHours), double(maxHours)) * 3600 }
 }

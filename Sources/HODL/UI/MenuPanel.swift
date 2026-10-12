@@ -84,14 +84,14 @@ struct MenuPanel: View {
                         Button("Resume Now") { engine.resume() }
                     }
                     Divider()
-                    Button("Release") { engine.release(.user) }
+                    Button("Turn Off") { engine.release(.user) }
                 } label: {
                     Image(systemName: "plus.circle")
                 }
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
                 .fixedSize()
-                .help(Text("Add time, pause, or release"))
+                .help(Text("Add time, pause, or turn off"))
             } else {
                 Menu {
                     Button("4 Hours") { engine.hold(duration: 4 * 3600) }
@@ -107,7 +107,7 @@ struct MenuPanel: View {
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
                 .fixedSize()
-                .help(Text("Hold for a set time"))
+                .help(Text("Stay awake for a set time"))
             }
         }
     }
@@ -241,18 +241,18 @@ struct MenuPanel: View {
 
     private var switches: some View {
         HStack(spacing: 0) {
-            QuickSwitch(symbol: "moon.zzz.fill", title: "Hold", isOn: Binding(
+            QuickSwitch(symbol: "moon.zzz.fill", title: "Stay Awake", isOn: Binding(
                 get: { engine.session != nil },
                 set: { $0 ? engine.hold() : engine.release(.user) }
             ), help: "Keep the Mac awake overnight (⌥⌘L). Ends on its own when the session timer runs out.")
             QuickSwitch(symbol: "sparkles", title: "Agents Only", isOn: $adaptive,
-                        help: "Hold only while an agent is working, and let go after it has been idle for a while.")
+                        help: "Stay awake only while an agent is working, and let the Mac sleep once it has been idle for a while.")
             QuickSwitch(symbol: "display", title: "Display Off", isOn: $displayOff,
-                        help: "Turn the display off when a hold starts. The Mac stays awake.")
+                        help: "Turn the display off once the Mac is set to stay awake. It keeps running.")
             QuickSwitch(symbol: "laptopcomputer.and.arrow.down", title: "Lid Pack", isOn: $lidPack,
                         help: "When the lid closes: dim, mute, and pause Slack, Discord, and WhatsApp. Agents are never paused.")
             QuickSwitch(symbol: playSounds ? "speaker.wave.2.fill" : "speaker.slash.fill", title: "Sounds", isOn: $playSounds,
-                        help: "Soft sounds when a hold starts and ends.")
+                        help: "Soft sounds when staying awake starts and ends.")
         }
         .onChange(of: displayOff) { _, on in
             if on, engine.engaged { engine.displayOffNow() }

@@ -38,7 +38,7 @@ struct SessionView: View {
         HStack(spacing: 16) {
             HODLMark(size: 64)
             VStack(alignment: .leading, spacing: 4) {
-                Text(verbatim: engine.session == nil ? "Not holding" : engine.engaged ? "Holding" : "Standing by")
+                Text(verbatim: engine.session == nil ? "Off" : engine.engaged ? "Awake" : "Standing by")
                     .font(.system(.title, design: .rounded).weight(.semibold))
                 Text(verbatim: engine.session == nil ? (engine.lastRelease?.reason.sentence ?? "Your Mac sleeps as usual.") : engine.describeSession())
                     .foregroundStyle(.secondary)
@@ -64,9 +64,9 @@ struct SessionView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     if engine.session == nil {
-                        Button("Hold Overnight") { engine.hold() }.keyboardShortcut(.defaultAction)
+                        Button("Stay Awake Overnight") { engine.hold() }.keyboardShortcut(.defaultAction)
                         Button("Until Agents Finish") { engine.hold(adaptive: true) }
-                        Menu("Hold For…") {
+                        Menu("Stay Awake For…") {
                             Button("4 Hours") { engine.hold(duration: 4 * 3600) }
                             Button("8 Hours") { engine.hold(duration: 8 * 3600) }
                             Button("12 Hours") { engine.hold(duration: 12 * 3600) }
@@ -75,7 +75,7 @@ struct SessionView: View {
                         }
                         .fixedSize()
                     } else {
-                        Button("Release") { engine.release(.user) }.keyboardShortcut(.defaultAction)
+                        Button("Turn Off") { engine.release(.user) }.keyboardShortcut(.defaultAction)
                         Button("+30m") { engine.extend(hours: 0.5) }
                         Button("+1h") { engine.extend(hours: 1) }
                         Button("+2h") { engine.extend(hours: 2) }

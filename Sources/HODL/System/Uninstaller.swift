@@ -34,7 +34,7 @@ enum Uninstaller {
     }
 
     static func blocker() -> String? {
-        if HoldEngine.shared.session != nil { return "A hold is running. Release it first, so normal sleep comes back before HODL goes." }
+        if HoldEngine.shared.session != nil { return "HODL is keeping the Mac awake. Turn it off first, so normal sleep comes back before HODL goes." }
         if Recovery.hasPendingChanges {
             return "HODL still has changes to put back (sleep, Low Power Mode, sound, brightness, or paused apps). Choose Retry from the menu until they’re restored."
         }

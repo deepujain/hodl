@@ -138,7 +138,7 @@ enum ClosedLid {
             guard Privileged.isInstalled else { return }
             Recovery.record { $0.sleepDisabled = true }
             if Privileged.pmset(["-a", "disablesleep", "1"]) {
-                Ledger.shared.add("closed lid", "Turned off lid-close sleep for this hold.")
+                Ledger.shared.add("closed lid", "Turned off lid-close sleep for tonight.")
             } else {
                 Recovery.record { $0.sleepDisabled = false }
             }

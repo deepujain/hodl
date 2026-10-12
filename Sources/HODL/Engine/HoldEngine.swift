@@ -147,10 +147,10 @@ final class HoldEngine {
         lowPowerDeclined = false
         lastRelease = nil
         let summary = describeSession()
-        Ledger.shared.add("hold", watchedApp == nil ? "\(summary) · from \(source)" : "\(summary)")
+        Ledger.shared.add("awake", watchedApp == nil ? "\(summary) · from \(source)" : "\(summary)")
         if !wasHolding {
             Sounds.hold()
-            Notifier.post("HODL is holding", "\(summary). Keep the Mac on a desk or stand, not in a closed bag.")
+            Notifier.post("Keeping your Mac awake", "\(summary). Keep the Mac on a desk or stand, not in a closed bag.")
         }
         evaluate()
         if Prefs.bool(Prefs.displayOff) { sleepDisplay(after: 1.5) }
@@ -167,7 +167,7 @@ final class HoldEngine {
         let failures = Recovery.restore()
         restoreWarning = failures.first
         lastRelease = Release(reason: reason)
-        Ledger.shared.add("release", failures.isEmpty ? reason.sentence : "\(reason.sentence) \(failures.joined(separator: " "))", reason: reason)
+        Ledger.shared.add("stopped", failures.isEmpty ? reason.sentence : "\(reason.sentence) \(failures.joined(separator: " "))", reason: reason)
         guard !quietly else { return }
         Sounds.release()
         if reason.isSafetyStop {
@@ -175,7 +175,7 @@ final class HoldEngine {
         } else if reason == .agentsIdle {
             Notifier.post("Agents finished", "\(reason.sentence) The Mac can sleep normally now.")
         } else {
-            Notifier.post("HODL released", reason.sentence)
+            Notifier.post("Your Mac can sleep again", reason.sentence)
         }
         if !failures.isEmpty { Notifier.post("HODL needs attention", failures.joined(separator: " "), important: true) }
     }
@@ -234,15 +234,15 @@ final class HoldEngine {
     private func startProblem() -> String? {
         let mode = Prefs.powerModeValue
         let onBattery = power.hasBattery && !power.onAC
-        if mode == .ac && onBattery { return "AC Only is on. Plug in to hold." }
+        if mode == .ac && onBattery { return "AC Only is on. Plug in to keep the Mac awake." }
         if onBattery {
-            guard let percent = power.percent else { return "The battery level can’t be read, so HODL won’t hold on battery." }
+            guard let percent = power.percent else { return "The battery level can’t be read, so HODL won’t keep the Mac awake on battery." }
             let floor = Prefs.int(Prefs.batteryFloor)
             if percent <= floor { return "The battery is at \(percent)%, at or below the \(floor)% floor." }
             let engageAbove = Prefs.int(Prefs.engageAbove)
             if engageAbove > 0, percent < engageAbove { return "HODL starts on battery only above \(engageAbove)%. It’s at \(percent)%." }
         }
-        if Prefs.bool(Prefs.thermalGuard), power.thermal == .critical { return "The Mac is too hot to hold right now." }
+        if Prefs.bool(Prefs.thermalGuard), power.thermal == .critical { return "The Mac is too hot to keep awake right now." }
         return nil
     }
 
@@ -280,7 +280,7 @@ final class HoldEngine {
                 if hotSince == nil {
                     hotSince = now
                     if !lowPowerDeclined { LowPower.enable(because: "the Mac is hot") }
-                    Ledger.shared.add("thermal", "The Mac is hot. HODL lets go if it stays hot for 10 minutes.")
+                    Ledger.shared.add("thermal", "The Mac is hot. HODL lets it sleep if it stays hot for 10 minutes.")
                 }
                 if let hotSince, now.timeIntervalSince(hotSince) >= 600 { return release(.thermal) }
             default:
@@ -307,7 +307,7 @@ final class HoldEngine {
         }
         let policy = Prefs.lidPolicyValue
         if why == nil, power.lidKnown, !policy.allows(lidClosed: power.lidClosed) {
-            why = power.lidClosed ? "Lid closed · set to hold only while open" : "Waiting for the lid to close"
+            why = power.lidClosed ? "Lid closed · set to stay awake only while open" : "Waiting for the lid to close"
         }
         standby = why
         why == nil ? engage() : disengage()
@@ -333,9 +333,9 @@ final class HoldEngine {
         if !on, Recovery.load()?.lowPowerWas != nil {
             Recovery.record { $0.lowPowerWas = nil }
             lowPowerDeclined = true
-            Ledger.shared.add("low power", "You turned Low Power Mode off. HODL won’t turn it back on during this hold.")
+            Ledger.shared.add("low power", "You turned Low Power Mode off. HODL won’t turn it back on tonight.")
         } else {
-            Ledger.shared.add("low power", "macOS Low Power Mode is \(on ? "on" : "off"). HODL keeps holding either way.")
+            Ledger.shared.add("low power", "macOS Low Power Mode is \(on ? "on" : "off"). HODL keeps the Mac awake either way.")
         }
     }
 
@@ -396,10 +396,10 @@ final class HoldEngine {
         if let session {
             let time = remaining.map(Self.format) ?? "no limit"
             if let standby { return "Standing by · \(standby.prefix(1).lowercased())\(standby.dropFirst())" }
-            if session.adaptive, !agents.anyActive { return "Holding · \(power.batteryLabel) · waiting on agents" }
-            return "Holding · \(power.batteryLabel) · \(time)"
+            if session.adaptive, !agents.anyActive { return "Awake · \(power.batteryLabel) · waiting on agents" }
+            return "Awake · \(power.batteryLabel) · \(time)"
         }
-        if let lastRelease { return "Released · \(lastRelease.reason.short)" }
+        if let lastRelease { return "Sleeping normally · \(lastRelease.reason.short)" }
         return "Ready · \(power.batteryLabel)"
     }
 
@@ -418,10 +418,10 @@ final class HoldEngine {
     }
 
     func describeSession() -> String {
-        guard let session else { return "Not holding" }
-        if let app = session.watchedApp { return "Holding while \(Self.appName(app)) runs" }
+        guard let session else { return "Off" }
+        if let app = session.watchedApp { return "Awake while \(Self.appName(app)) runs" }
         let length = session.ends.map { "until \($0.formatted(date: .omitted, time: .shortened))" } ?? "with no time limit"
-        return session.adaptive ? "Holding \(length) while agents work" : "Holding \(length)"
+        return session.adaptive ? "Awake \(length) while agents work" : "Awake \(length)"
     }
 
     static func format(_ interval: TimeInterval) -> String {

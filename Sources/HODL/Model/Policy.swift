@@ -15,9 +15,9 @@ enum PowerMode: String, CaseIterable, Identifiable, Codable, Sendable {
 
     var detail: String {
         switch self {
-        case .adaptive: "Holds on AC or battery, and turns on Low Power Mode as the battery runs down."
-        case .ac: "Holds only while plugged in. Unplugging ends the hold."
-        case .battery: "Holds on battery down to the floor, with no Low Power Mode step."
+        case .adaptive: "Keeps the Mac awake on AC or battery, and turns on Low Power Mode as the battery runs down."
+        case .ac: "Keeps the Mac awake only while plugged in. Unplugging lets it sleep."
+        case .battery: "Keeps the Mac awake on battery down to the floor, with no Low Power Mode step."
         }
     }
 
@@ -45,9 +45,9 @@ enum LidPolicy: String, CaseIterable, Identifiable, Codable, Sendable {
 
     var detail: String {
         switch self {
-        case .either: "Hold with the lid open or closed."
-        case .closed: "Hold only while the lid is closed. With the lid open, macOS sleeps as usual."
-        case .open: "Hold only while the lid is open. Closing it lets the Mac sleep."
+        case .either: "Keeps the Mac awake with the lid open or closed."
+        case .closed: "Keeps the Mac awake only while the lid is closed. With the lid open, macOS sleeps as usual."
+        case .open: "Keeps the Mac awake only while the lid is open. Closing it lets the Mac sleep."
         }
     }
 
@@ -69,11 +69,11 @@ enum LidPolicy: String, CaseIterable, Identifiable, Codable, Sendable {
     }
 }
 
-/// Why a hold ended. Shown in the menu, the session window, notifications, and the ledger.
+/// Why staying awake ended. Shown in the menu, the session window, notifications, and the ledger.
 enum ReleaseReason: String, Codable, Sendable {
     case user, timer, battery, batteryUnknown, thermal, agentsIdle, unplugged, quit, recovered, appQuit
 
-    /// A few words for the status line: "Released · thermal".
+    /// A few words for the status line: "Sleeping normally · thermal".
     var short: String {
         switch self {
         case .user: "by you"
@@ -91,16 +91,16 @@ enum ReleaseReason: String, Codable, Sendable {
 
     var sentence: String {
         switch self {
-        case .user: "You released the hold."
+        case .user: "You turned it off."
         case .timer: "The session timer ran out."
         case .battery: "The battery reached the floor you set."
-        case .batteryUnknown: "The battery level couldn’t be read on battery power, so HODL let go to be safe."
+        case .batteryUnknown: "The battery level couldn’t be read on battery power, so HODL let the Mac sleep to be safe."
         case .thermal: "The Mac got too hot, so HODL let it rest."
         case .agentsIdle: "Every agent finished and stayed idle past the timeout."
         case .unplugged: "The Mac was unplugged while AC Only was on."
         case .quit: "HODL quit and restored normal sleep."
-        case .recovered: "HODL found an unfinished hold from last time and restored normal sleep."
-        case .appQuit: "The app this hold was waiting on quit."
+        case .recovered: "HODL found it was still keeping the Mac awake from last time, and restored normal sleep."
+        case .appQuit: "The app HODL was staying awake for quit."
         }
     }
 
