@@ -26,7 +26,7 @@ Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL t
 open build/HODL.app
 ```
 
-The pipeline matches [Where’d It Go](https://github.com/deepujain/whereditgo): SwiftPM, `lipo` for a universal binary, the icon rendered from `Resources/IconPhoto.jpg` with `--render-icon` + `iconutil`, and an ad hoc signature. HODL is a menu bar app (`LSUIElement`) with no Dock icon.
+The build uses SwiftPM, `lipo` for a universal binary, the icon rendered from `Resources/IconPhoto.jpg` with `--render-icon` + `iconutil`, and an ad hoc signature. HODL is a menu bar app (`LSUIElement`) with no Dock icon.
 
 ## How it keeps the Mac awake
 

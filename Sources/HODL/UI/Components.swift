@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A round Control Center–style switch, as in Where’d It Go.
+/// A round Control Center–style switch.
 struct QuickSwitch: View {
     let symbol: String
     let title: LocalizedStringKey
