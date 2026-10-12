@@ -10,6 +10,12 @@ struct MenuPanel: View {
     @AppStorage(Prefs.displayOff) private var displayOff = false
     @AppStorage(Prefs.lidPack) private var lidPack = false
     @AppStorage(Prefs.closedLidOnBattery) private var closedLidOnBattery = false
+    private let helperErrorState = State<String?>(initialValue: nil)
+
+    private var helperError: String? {
+        get { helperErrorState.wrappedValue }
+        nonmutating set { helperErrorState.wrappedValue = newValue }
+    }
     @AppStorage(Prefs.playSounds) private var playSounds = false
     @AppStorage(Prefs.powerMode) private var powerMode = PowerMode.adaptive
     @AppStorage(Prefs.lidPolicy) private var lidPolicy = LidPolicy.either
@@ -227,6 +233,15 @@ struct MenuPanel: View {
             Label { Text(verbatim: refusal).lineLimit(2) } icon: { Image(systemName: "info.circle") }
                 .font(.caption).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
+        } else if engine.session != nil, lidPolicy != .open, power.hasBattery, !power.onAC, !closedLidOnBattery {
+            HStack(spacing: 6) {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                Text(verbatim: helperError ?? "Closing the lid on battery will put it to sleep.").lineLimit(2)
+                Spacer(minLength: 4)
+                Button("Allow") { allowClosedLid() }.controlSize(.small)
+                    .help("Keep the Mac awake with the lid closed on battery. Asks for your password once.")
+            }
+            .font(.caption)
         } else {
             Label { Text(verbatim: switchSummary).lineLimit(3).fixedSize(horizontal: false, vertical: true) } icon: {
                 Image(systemName: engine.session == nil ? "moon" : "moon.zzz.fill")
@@ -236,22 +251,22 @@ struct MenuPanel: View {
         }
     }
 
-    /// What the five switches below add up to, in plain words.
     private var switchSummary: String {
-        guard let session = engine.session else { return "Your Mac will sleep as usual, even while agents work." }
+        guard let session = engine.session else { return "Your Mac sleeps as usual." }
         let left = engine.remaining.map { "for \(HoldEngine.format($0))" } ?? "with no time limit"
-        var parts = [session.adaptive ? "Your Mac stays awake until your agents finish, then sleeps."
-                                      : "Your Mac stays awake \(left), even after your agents finish."]
-        if lidPolicy == .open {
-            parts.append("Closing the lid puts it to sleep.")
-        } else if power.hasBattery, !power.onAC, !closedLidOnBattery {
-            parts.append("On battery, closing the lid puts it to sleep.")
-        } else if lidPack {
-            parts.append("Closing the lid dims it, mutes it, and pauses chat apps.")
-        }
-        if displayOff { parts.append("The screen turns off.") }
-        if playSounds { parts.append("You’ll hear a chime when it stops.") }
-        return parts.joined(separator: " ")
+        var parts = [session.adaptive ? "Awake until agents finish, then sleeps" : "Awake \(left), even after agents finish"]
+        if displayOff { parts.append("screen off") }
+        if lidPolicy == .open { parts.append("closing the lid sleeps it") }
+        else if lidPack { parts.append("dims and mutes when the lid closes") }
+        if playSounds { parts.append("chimes when it stops") }
+        return parts.joined(separator: ", ") + "."
+    }
+
+    private func allowClosedLid() {
+        helperError = Privileged.isInstalled ? nil : Privileged.installRule()
+        guard Privileged.isInstalled else { return }
+        closedLidOnBattery = true
+        engine.settingsChanged()
     }
 
     // MARK: Switches

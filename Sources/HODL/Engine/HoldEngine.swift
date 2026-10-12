@@ -384,7 +384,7 @@ final class HoldEngine {
         refusal = nil
         restoreWarning = nil
         if let endsIn {
-            session = Session(started: clock.addingTimeInterval(-3600), ends: clock.addingTimeInterval(endsIn), adaptive: false, source: "menu")
+            session = Session(started: clock.addingTimeInterval(-3600), ends: clock.addingTimeInterval(endsIn), adaptive: Prefs.bool(Prefs.adaptive), source: "menu")
             engaged = true
             lastRelease = nil
         } else {

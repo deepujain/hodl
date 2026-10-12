@@ -13,7 +13,7 @@
 
 ## Download
 
-**[Download HODL 1.0.4](https://github.com/deepujain/hodl/releases/download/v1.0.4/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.4) · [website](https://1xaispark.com/apps/hodl.html)
+**[Download HODL 1.0.5](https://github.com/deepujain/hodl/releases/download/v1.0.5/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.5) · [website](https://1xaispark.com/apps/hodl.html)
 
 Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL to Applications, then right-click it and choose **Open** the first time; the build isn’t notarized yet.
 
@@ -28,7 +28,7 @@ Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL t
 
 On is blue in the panel; Off is grey. **Stay Awake** is the main switch: nothing else keeps the Mac awake on its own. **Agents Only** lets the Mac sleep about 10 minutes after your agents finish, instead of after 8 hours. **Display Off** only turns the screen off. **Quiet Mode** only acts when you close the lid: it dims the screen and keyboard light, mutes sound, and pauses chat apps, and puts them back when you open it.
 
-Whatever you choose, the Mac still sleeps at 15% battery or if it gets too hot. With the lid closed on battery, macOS sleeps unless you turn on the closed-lid helper once in **Settings › Lid & Display**; plugged in, nothing else is needed.
+Whatever you choose, the Mac still sleeps at 15% battery or if it gets too hot. On battery, macOS sleeps when you close the lid unless you click **Allow** in the panel once and enter your password (or turn on the closed-lid helper in **Settings › Lid & Display**); plugged in, nothing else is needed.
 
 ## Build
 
