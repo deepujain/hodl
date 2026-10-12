@@ -16,6 +16,8 @@ enum Marketing {
         power.stage(percent: 82, onAC: false, lidClosed: false)
         agents.stage(["claude": .active, "codex": .active, "cursor": .active, "aider": .idle, "pi": .off])
         let holding = MenuPanel(engine: engine, agents: agents, power: power)
+        write(holding.panelChrome(dark: false, shadow: false), name: "panel-light", size: nil)
+        write(holding.panelChrome(dark: true, shadow: false), name: "panel-dark", size: nil)
         write(Stage(photo: .detail) { holding.panelChrome(dark: false) }, name: "shot-menu", size: CGSize(width: 560, height: 620))
         write(Stage(photo: .evening, alignment: .trailing) { holding.panelChrome(dark: true) },
               name: "shot-hold", size: CGSize(width: 800, height: 600))
