@@ -150,7 +150,7 @@ final class HoldEngine {
         Ledger.shared.add("awake", watchedApp == nil ? "\(summary) · from \(source)" : "\(summary)")
         if !wasHolding {
             Sounds.hold()
-            Notifier.post("Keeping your Mac awake", "\(summary). Keep the Mac on a desk or stand, not in a closed bag.")
+            Notifier.post("Keeping your Mac awake", "\(summary).")
         }
         evaluate()
         if Prefs.bool(Prefs.displayOff) { sleepDisplay(after: 1.5) }
@@ -220,6 +220,14 @@ final class HoldEngine {
         }
         if engaged { ClosedLid.set(wantsClosedLid) }
         Hotkey.setEnabled(Prefs.bool(Prefs.hotkey))
+        evaluate()
+    }
+
+    /// The Agents Only switch applies to the running session as well as the next one.
+    func setAgentsOnly(_ on: Bool) {
+        guard session != nil, session?.adaptive != on else { return }
+        session?.adaptive = on
+        Ledger.shared.add("awake", on ? "Now only while agents work." : "Now for the whole session, even after agents finish.")
         evaluate()
     }
 

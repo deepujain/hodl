@@ -226,15 +226,28 @@ struct MenuPanel: View {
             Label { Text(verbatim: refusal).lineLimit(2) } icon: { Image(systemName: "info.circle") }
                 .font(.caption).foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        } else if let release = engine.lastRelease, engine.session == nil {
-            Label { Text(verbatim: release.reason.sentence).lineLimit(2) } icon: { Image(systemName: "moon") }
-                .font(.caption).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
         } else {
-            Label("Keep the Mac on a desk or stand, not in a closed bag.", systemImage: "wind")
-                .font(.caption).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            Label { Text(verbatim: switchSummary).lineLimit(3).fixedSize(horizontal: false, vertical: true) } icon: {
+                Image(systemName: engine.session == nil ? "moon" : "moon.zzz.fill")
+            }
+            .font(.caption).foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    /// What the five switches below add up to, in plain words.
+    private var switchSummary: String {
+        guard let session = engine.session else {
+            return adaptive
+                ? "Off: the Mac sleeps as usual. Turn on Stay Awake to keep it awake while agents work."
+                : "Off: the Mac sleeps as usual. Turn on Stay Awake to keep it awake overnight."
+        }
+        let left = engine.remaining.map { "for \(HoldEngine.format($0)) more" } ?? "with no time limit"
+        var parts = [session.adaptive ? "Awake while agents work, then sleeps." : "Awake \(left), even after agents finish."]
+        if displayOff { parts.append("Screen off.") }
+        if lidPack { parts.append("Lid closed: dims, mutes, pauses chat apps.") }
+        if playSounds { parts.append("Sound when it stops.") }
+        return parts.joined(separator: " ")
     }
 
     // MARK: Switches
@@ -257,7 +270,7 @@ struct MenuPanel: View {
         .onChange(of: displayOff) { _, on in
             if on, engine.engaged { engine.displayOffNow() }
         }
-        .onChange(of: adaptive) { engine.settingsChanged() }
+        .onChange(of: adaptive) { _, on in engine.setAgentsOnly(on) }
         .onChange(of: lidPack) { engine.settingsChanged() }
     }
 

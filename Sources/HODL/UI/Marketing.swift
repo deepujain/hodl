@@ -99,7 +99,7 @@ private struct Banners: View {
             banner(time: "6:12 AM", title: "Agents finished",
                    body: "Every agent finished and stayed idle past the timeout. The Mac can sleep normally now.")
             banner(time: "11:48 PM", title: "Keeping your Mac awake",
-                   body: "Awake until 7:00 AM. Keep the Mac on a desk or stand, not in a closed bag.")
+                   body: "Awake until 7:00 AM while agents work.")
                 .opacity(0.85)
                 .scaleEffect(0.96)
         }

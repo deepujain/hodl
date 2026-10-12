@@ -88,6 +88,7 @@ struct SettingsView: View {
         }
         .frame(width: 540)
         .onAppear { NSApp.activate() }
+        .onChange(of: adaptive) { _, on in engine.setAgentsOnly(on) }
         .onChange(of: keepDisplayAwake) { engine.settingsChanged() }
         .onChange(of: preventLock) { engine.settingsChanged() }
         .onChange(of: closedLidOnBattery) { engine.settingsChanged() }
@@ -165,9 +166,6 @@ struct SettingsView: View {
                 Toggle("Let the Mac rest when it gets hot", isOn: $thermalGuard)
                 Text("HODL turns on Low Power Mode when macOS reports serious heat, lets the Mac sleep if it lasts 10 minutes, and at once if it becomes critical.")
                     .font(.caption).foregroundStyle(.secondary)
-            }
-            Section {
-                Label("Keep the Mac on a desk or stand with room to breathe, never in a closed bag or sleeve.", systemImage: "wind")
             }
         }
         .formStyle(.grouped)

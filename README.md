@@ -13,7 +13,7 @@
 
 ## Download
 
-**[Download HODL 1.0.0](https://github.com/deepujain/hodl/releases/download/v1.0.0/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.0) · [website](https://1xaispark.com/apps/hodl.html)
+**[Download HODL 1.0.1](https://github.com/deepujain/hodl/releases/download/v1.0.1/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.1) · [website](https://1xaispark.com/apps/hodl.html)
 
 Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL to Applications, then right-click it and choose **Open** the first time; the build isn’t notarized yet.
 
@@ -55,7 +55,6 @@ The build uses SwiftPM, `lipo` for a universal binary, the icon rendered from `R
 - **Hard maximum** of 12 hours by default. Adding time never schedules more than the maximum ahead of now. A no-limit session is opt-in and still obeys every safety stop.
 - **Your Low Power Mode wins.** HODL only turns Low Power Mode on, and only when it was off. If you turn it off while HODL is on, HODL forgets its change and won’t turn it back on until the next night.
 - **Clean uninstall.** Settings › General › Uninstall removes hooks (restoring backups), the command-line tools, the closed-lid helper, the login item, and App Nap settings, then moves HODL to the Trash. It refuses while HODL is keeping the Mac awake or anything is still waiting to be put back.
-- **Never in a bag.** HODL says so in the panel, in notifications, and in Settings: keep the Mac on a desk or stand.
 
 ## Features
 

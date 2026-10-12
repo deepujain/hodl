@@ -100,9 +100,6 @@ struct SessionView: View {
                     stat("Low Power", power.lowPowerMode ? "On" : "Off")
                     stat("Keeping awake", SleepGuard.shared.summary)
                 }
-                Label("Keep the Mac on a desk or stand, not in a closed bag. macOS battery and thermal limits can still win.",
-                      systemImage: "wind")
-                    .font(.caption).foregroundStyle(.secondary)
             }
             .padding(6)
         }
