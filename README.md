@@ -11,7 +11,11 @@
   <img src="docs/panel-dark.png" width="344" alt="HODL menu bar panel in dark mode">
 </p>
 
-Requires macOS 14 Sonoma or later.
+## Download
+
+**[Download HODL 1.0.0](https://github.com/deepujain/hodl/releases/download/v1.0.0/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.0) · [website](https://1xaispark.com/apps/hodl.html)
+
+Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL to Applications, then right-click it and choose **Open** the first time; the build isn’t notarized yet.
 
 ## Build
 
