@@ -21,9 +21,9 @@ Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL t
 
 | I want… | 🌙 Stay Awake | ✨ Agents Only | 🖥️ Display Off | 🔕 Quiet Mode |
 |---|:---:|:---:|:---:|:---:|
-| ⭐ **Lid closed, Mac awake overnight while agents run** | ✅ On | ✅ On | Doesn’t matter | ✅ On |
-| **Lid open, Mac awake overnight while agents run** | ✅ On | ✅ On | ✅ On | Doesn’t matter |
-| **Mac awake for 8 hours, agents or not** | ✅ On | Off | ✅ On | ✅ On |
+| ⭐ **Mac awake overnight while agents run, lid open or closed** (default) | ✅ On | ✅ On | Off | Off |
+| **Same, but dim, muted, and chat apps paused when the lid is closed** | ✅ On | ✅ On | Doesn’t matter | ✅ On |
+| **Mac awake for 8 hours, agents or not** | ✅ On | Off | Doesn’t matter | Doesn’t matter |
 | **Normal Mac, sleeps as usual** | Off | Doesn’t matter | Doesn’t matter | Doesn’t matter |
 
 On is blue in the panel; Off is grey. **Stay Awake** is the main switch: nothing else keeps the Mac awake on its own. **Agents Only** lets the Mac sleep about 10 minutes after your agents finish, instead of after 8 hours. **Display Off** only turns the screen off. **Quiet Mode** only acts when you close the lid: it dims the screen and keyboard light, mutes sound, and pauses chat apps, and puts them back when you open it.
