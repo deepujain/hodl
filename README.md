@@ -26,7 +26,9 @@ Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL t
 | **Mac awake for 8 hours, agents or not** | ✅ On | Off | Doesn’t matter | Doesn’t matter |
 | **Normal Mac, sleeps as usual** | Off | Doesn’t matter | Doesn’t matter | Doesn’t matter |
 
-On is blue in the panel; Off is grey. **Stay Awake** is the main switch: nothing else keeps the Mac awake on its own. **Agents Only** lets the Mac sleep about 10 minutes after your agents finish, instead of after 8 hours. **Display Off** only turns the screen off. **Quiet Mode** only acts when you close the lid: it dims the screen and keyboard light, mutes sound, and pauses chat apps, and puts them back when you open it.
+From 10 PM, HODL turns **Stay Awake** on by itself as soon as an agent is working, until your agents finish and never past 7 AM. Turn it off and it stays off for the rest of the night; change the time or turn this off in **Settings › Awake**.
+
+On is blue in the panel, Off is grey. **Stay Awake** is the main switch: nothing else keeps the Mac awake on its own. **Agents Only** lets the Mac sleep about 10 minutes after your agents finish, instead of after 8 hours. **Display Off** only turns the screen off. **Quiet Mode** only acts when you close the lid: it dims the screen and keyboard light, mutes sound, and pauses chat apps, and puts them back when you open it.
 
 Whatever you choose, the Mac still sleeps at 15% battery or if it gets too hot. On battery, macOS sleeps when you close the lid unless you click **Allow** in the panel once and enter your password (or turn on the closed-lid helper in **Settings › Lid & Display**); plugged in, nothing else is needed.
 

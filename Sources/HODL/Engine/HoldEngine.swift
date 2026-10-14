@@ -44,6 +44,8 @@ final class HoldEngine {
     @ObservationIgnored private var signalSources: [DispatchSourceSignal] = []
     /// A watched app the user released or HODL refused; it won’t start a hold again until it quits.
     @ObservationIgnored private var skippedApps: Set<String> = []
+    /// Start of the night the user turned Stay Awake off in, or a safety stop ended it. No night start until the next one.
+    private var nightDeclined: Date?
     @ObservationIgnored private var lowPowerSeen: Bool?
     /// The user turned Low Power Mode off during this hold, so HODL won’t turn it back on.
     @ObservationIgnored private var lowPowerDeclined = false
@@ -107,7 +109,39 @@ final class HoldEngine {
         power.refresh()
         agents.refresh()
         followWatchedApps()
+        startForNight()
         evaluate()
+    }
+
+    /// At night, turns Stay Awake on until morning as soon as an agent is working.
+    private func startForNight() {
+        guard session == nil, agents.anyActive, let night = nightWaiting, startProblem() == nil else { return }
+        hold(duration: night.morning.timeIntervalSinceNow, adaptive: true, source: "the night schedule")
+    }
+
+    /// Tonight, when the night schedule will still turn Stay Awake on.
+    var nightWaiting: (start: Date, morning: Date)? {
+        guard Prefs.bool(Prefs.nightAuto), let night = Self.night(), night.start != nightDeclined else { return nil }
+        return night
+    }
+
+    /// The night `now` falls in, from the start hour until morning.
+    static func night(at now: Date = Date()) -> (start: Date, morning: Date)? {
+        let calendar = Calendar.current
+        let startHour = Prefs.int(Prefs.nightStartHour)
+        let hour = calendar.component(.hour, from: now)
+        let today = calendar.startOfDay(for: now)
+        guard hour >= startHour || hour < Prefs.morningHour,
+              let day = hour >= startHour ? today : calendar.date(byAdding: .day, value: -1, to: today),
+              let start = calendar.date(bySettingHour: startHour, minute: 0, second: 0, of: day),
+              let nextDay = calendar.date(byAdding: .day, value: 1, to: day),
+              let morning = calendar.date(bySettingHour: Prefs.morningHour, minute: 0, second: 0, of: nextDay) else { return nil }
+        return (start, morning)
+    }
+
+    static func hourLabel(_ hour: Int) -> String {
+        let date = Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date()) ?? Date()
+        return date.formatted(.dateTime.hour())
     }
 
     /// Starts a hold when a watched app is running, once per launch of that app.
@@ -159,6 +193,7 @@ final class HoldEngine {
     func release(_ reason: ReleaseReason = .user, quietly: Bool = false) {
         guard let ending = session else { return }
         if let app = ending.watchedApp { skippedApps.insert(app) }
+        if reason == .user || reason.isSafetyStop, let night = Self.night() { nightDeclined = night.start }
         session = nil
         pausedUntil = nil
         standby = nil

@@ -10,6 +10,8 @@ struct MenuPanel: View {
     @AppStorage(Prefs.displayOff) private var displayOff = false
     @AppStorage(Prefs.lidPack) private var lidPack = false
     @AppStorage(Prefs.closedLidOnBattery) private var closedLidOnBattery = false
+    @AppStorage(Prefs.nightAuto) private var nightAuto = true
+    @AppStorage(Prefs.nightStartHour) private var nightStartHour = 22
     private let helperErrorState = State<String?>(initialValue: nil)
 
     private var helperError: String? {
@@ -252,7 +254,11 @@ struct MenuPanel: View {
     }
 
     private var switchSummary: String {
-        guard let session = engine.session else { return "Your Mac sleeps as usual." }
+        guard let session = engine.session else {
+            if engine.nightWaiting != nil { return "Turns on by itself when an agent starts working." }
+            guard nightAuto, HoldEngine.night() == nil else { return "Your Mac sleeps as usual." }
+            return "Turns on by itself at \(HoldEngine.hourLabel(nightStartHour)) if agents are working."
+        }
         let left = engine.remaining.map { "for \(HoldEngine.format($0))" } ?? "with no time limit"
         var parts = [session.adaptive ? "Awake until agents finish, then sleeps" : "Awake \(left), even after agents finish"]
         if displayOff { parts.append("screen off") }

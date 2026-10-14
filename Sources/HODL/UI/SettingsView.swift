@@ -31,6 +31,8 @@ struct SettingsView: View {
     @AppStorage(Prefs.playSounds) private var playSounds = false
     @AppStorage(Prefs.notifications) private var notifications = true
     @AppStorage(Prefs.hotkey) private var hotkey = true
+    @AppStorage(Prefs.nightAuto) private var nightAuto = true
+    @AppStorage(Prefs.nightStartHour) private var nightStartHour = 22
 
     private let loginState = State(initialValue: SMAppService.mainApp.status == .enabled)
     private let helperState = State(initialValue: Privileged.isInstalled)
@@ -99,6 +101,15 @@ struct SettingsView: View {
 
     private var holdTab: some View {
         Form {
+            Section("At night") {
+                Toggle("Turn on Stay Awake by itself when an agent is working", isOn: $nightAuto)
+                Picker("Starting at", selection: $nightStartHour) {
+                    ForEach(19...23, id: \.self) { Text(HoldEngine.hourLabel($0)).tag($0) }
+                }
+                .disabled(!nightAuto)
+                Text("Stays awake until your agents finish, and never past \(HoldEngine.hourLabel(Prefs.morningHour)). If you turn Stay Awake off, it stays off for the rest of the night.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Session") {
                 Picker("Stay awake overnight for", selection: $sessionHours) {
                     ForEach([4.0, 6, 8, 10, 12], id: \.self) { Text("\(Int($0)) hours").tag($0) }

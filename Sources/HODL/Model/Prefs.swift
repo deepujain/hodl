@@ -31,6 +31,10 @@ enum Prefs {
     static let notifications = "notifications"
     static let hotkey = "hotkey"
     static let hasOnboarded = "hasOnboarded"
+    static let nightAuto = "nightAuto"
+    static let nightStartHour = "nightStartHour"
+    /// Night sessions started by `nightAuto` end at this hour.
+    static let morningHour = 7
 
     static func register() {
         UserDefaults.standard.register(defaults: [
@@ -62,6 +66,8 @@ enum Prefs {
             playSounds: false,
             notifications: true,
             hotkey: true,
+            nightAuto: true,
+            nightStartHour: 22,
         ])
     }
 
