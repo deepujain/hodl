@@ -34,7 +34,16 @@ struct HODLApp: App {
             exit(0)
         }
         #endif
+        if Self.anotherCopyIsRunning { exit(0) }
         Prefs.register()
+    }
+
+    /// Two copies would fight over sleep settings and show two moons, so a second one quits at launch.
+    private static var anotherCopyIsRunning: Bool {
+        guard let id = Bundle.main.bundleIdentifier else { return false }
+        let me = ProcessInfo.processInfo.processIdentifier
+        return NSRunningApplication.runningApplications(withBundleIdentifier: id)
+            .contains { $0.processIdentifier != me && !$0.isTerminated }
     }
 
     var body: some Scene {
