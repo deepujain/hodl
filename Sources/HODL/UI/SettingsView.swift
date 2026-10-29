@@ -80,16 +80,50 @@ struct SettingsView: View {
         nonmutating set { helperErrorState.wrappedValue = newValue }
     }
 
+    enum Tab: Hashable { case awake, safety, lid, agents, general }
+
+    private let tabState = State(initialValue: SettingsView.startTab)
+
+    private static var startTab: Tab {
+        #if DEBUG
+        initialTab ?? .awake
+        #else
+        .awake
+        #endif
+    }
+    private var tab: Tab {
+        get { tabState.wrappedValue }
+        nonmutating set { tabState.wrappedValue = newValue }
+    }
+
+    #if DEBUG
+    /// Lets snapshots open a given tab.
+    nonisolated(unsafe) static var initialTab: Tab?
+    #endif
+
     var body: some View {
-        TabView {
-            holdTab.tabItem { Label("Awake", systemImage: "moon.zzz") }
-            safetyTab.tabItem { Label("Safety", systemImage: "shield.lefthalf.filled") }
-            lidTab.tabItem { Label("Lid & Display", systemImage: "laptopcomputer") }
-            agentsTab.tabItem { Label("Agents", systemImage: "sparkles") }
-            generalTab.tabItem { Label("General", systemImage: "gearshape") }
+        VStack(spacing: 0) {
+            SettingsTabs(tabs: [
+                (Tab.awake, "Awake", "moon.zzz.fill"),
+                (.safety, "Safety", "shield.lefthalf.filled"),
+                (.lid, "Lid & Display", "laptopcomputer"),
+                (.agents, "Agents", "sparkles"),
+                (.general, "General", "gearshape.fill"),
+            ], selection: Binding(get: { tab }, set: { tab = $0 }))
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
+            Divider()
+            #if DEBUG
+            if Self.initialTab != nil { page } else { ScrollView { page }.frame(height: 560) }
+            #else
+            ScrollView { page }.frame(height: 560)
+            #endif
         }
-        .frame(width: 540)
-        .onAppear { NSApp.activate() }
+        .frame(width: 560)
+        .onAppear {
+            NSApp.activate()
+        }
         .onChange(of: adaptive) { _, on in engine.setAgentsOnly(on) }
         .onChange(of: keepDisplayAwake) { engine.settingsChanged() }
         .onChange(of: preventLock) { engine.settingsChanged() }
@@ -99,235 +133,250 @@ struct SettingsView: View {
         .onChange(of: powerMode) { engine.settingsChanged() }
     }
 
-    private var holdTab: some View {
-        Form {
-            Section("At night") {
-                Toggle("Turn on Stay Awake by itself when an agent is working", isOn: $nightAuto)
-                Picker("Starting at", selection: $nightStartHour) {
-                    ForEach(19...23, id: \.self) { Text(HoldEngine.hourLabel($0)).tag($0) }
-                }
-                .disabled(!nightAuto)
-                Text("Stays awake until your agents finish, and never past \(HoldEngine.hourLabel(Prefs.morningHour)). If you turn Stay Awake off, it stays off for the rest of the night.")
-                    .font(.caption).foregroundStyle(.secondary)
+    private var page: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            switch tab {
+            case .awake: holdTab
+            case .safety: safetyTab
+            case .lid: lidTab
+            case .agents: agentsTab
+            case .general: generalTab
             }
-            Section("Session") {
-                Picker("Stay awake overnight for", selection: $sessionHours) {
-                    ForEach([4.0, 6, 8, 10, 12], id: \.self) { Text("\(Int($0)) hours").tag($0) }
-                }
-                Picker("Never stay awake longer than", selection: $maxHours) {
-                    ForEach([8.0, 10, 12, 16, 24], id: \.self) { Text("\(Int($0)) hours").tag($0) }
-                }
-                Toggle("Offer a session with no time limit", isOn: $allowUnlimited)
-                Text("With no time limit, HODL still lets the Mac sleep for battery, heat, and unplugging, and restores normal sleep if it quits or crashes.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section("Agents Only") {
-                Toggle("Stay awake only while an agent is working", isOn: $adaptive)
-                Picker("Let the Mac sleep after agents are idle for", selection: $idleMinutes) {
-                    ForEach([2, 5, 10, 15, 20, 30], id: \.self) { Text("\($0) minutes").tag($0) }
-                }
-                .disabled(!adaptive)
-            }
-            Section("Power") {
-                Picker("Power mode", selection: $powerMode) {
-                    ForEach(PowerMode.allCases) { Text($0.title).tag($0) }
-                }
-                Text(powerMode.detail).font(.caption).foregroundStyle(.secondary)
-            }
-            Section("Stay awake while an app runs") {
-                ForEach(watchedApps, id: \.self) { id in
-                    HStack {
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func hours(_ values: [Double]) -> [(value: Double, label: String)] {
+        values.map { ($0, "\(Int($0)) h") }
+    }
+
+    @ViewBuilder private var holdTab: some View {
+        SettingsCard(title: "At night",
+                     note: "Stays awake until your agents finish, and never past \(HoldEngine.hourLabel(Prefs.morningHour)). Turn Stay Awake off and it stays off for the rest of the night.") {
+            SwitchRow(symbol: "moon.stars.fill", title: "Turn on by itself when an agent is working", tint: .indigo, isOn: $nightAuto)
+            RowDivider()
+            ChoiceRow(symbol: "clock.fill", title: "Starting at", tint: .indigo, options: (19...23).map { ($0, HoldEngine.hourLabel($0)) }, selection: $nightStartHour)
+            .disabled(!nightAuto)
+        }
+        SettingsCard(title: "Session",
+                     note: "With no time limit, HODL still lets the Mac sleep for battery, heat, and unplugging, and puts normal sleep back if it quits or crashes.") {
+            ChoiceRow(symbol: "hourglass", title: "Stay awake overnight for", options: hours([4, 6, 8, 10, 12]), selection: $sessionHours)
+            RowDivider()
+            ChoiceRow(symbol: "stopwatch.fill", title: "Never longer than", options: hours([8, 10, 12, 16, 24]), selection: $maxHours)
+            RowDivider()
+            SwitchRow(symbol: "infinity", title: "Offer a session with no time limit", isOn: $allowUnlimited)
+        }
+        SettingsCard(title: "Agents only") {
+            SwitchRow(symbol: "sparkles", title: "Stay awake only while an agent is working", tint: .purple, isOn: $adaptive)
+            RowDivider()
+            ChoiceRow(symbol: "zzz", title: "Let the Mac sleep after agents are idle for", tint: .purple, options: [2, 5, 10, 15, 20, 30].map { ($0, "\($0) min") }, selection: $idleMinutes)
+            .disabled(!adaptive)
+        }
+        SettingsCard(title: "Power", note: powerMode.detail) {
+            ChoiceRow(symbol: powerMode.symbol, title: "Stay awake on", tint: .green, options: PowerMode.allCases.map { ($0, $0.title) }, selection: $powerMode)
+        }
+        SettingsCard(title: "Stay awake while an app runs",
+                     note: "When one of these apps opens, HODL keeps the Mac awake until it quits, up to the longest time you allow. Good for a training run, a render, or a long download.") {
+            ForEach(watchedApps, id: \.self) { id in
+                HStack(spacing: 12) {
+                    Group {
                         if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) {
-                            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 18, height: 18)
+                            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable()
+                        } else {
+                            Image(systemName: "app.dashed").resizable().foregroundStyle(.secondary)
                         }
-                        Text(verbatim: HoldEngine.appName(id))
-                        Spacer()
-                        Button { watchedApps.removeAll { $0 == id } } label: { Image(systemName: "minus.circle") }
-                            .buttonStyle(.borderless)
-                            .help(Text("Stop watching this app"))
                     }
+                    .frame(width: 24, height: 24)
+                    Text(verbatim: HoldEngine.appName(id)).font(.system(size: 12.5, weight: .medium))
+                    Spacer()
+                    Button { watchedApps.removeAll { $0 == id } } label: {
+                        Image(systemName: "minus.circle.fill").font(.system(size: 14)).foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(Text("Stop watching this app"))
                 }
-                Button("Add App…") { chooseApp() }
-                Text("When one of these apps opens, HODL keeps the Mac awake until it quits, up to the longest time you allow. A training run, a render, or a long download keeps the Mac awake on its own.")
-                    .font(.caption).foregroundStyle(.secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                RowDivider()
             }
+            Button { chooseApp() } label: {
+                Label("Add App…", systemImage: "plus.circle.fill")
+                    .font(.system(size: 12.5, weight: .medium))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         }
-        .formStyle(.grouped)
-        .fixedSize(horizontal: false, vertical: true)
     }
 
-    private var safetyTab: some View {
-        Form {
-            Section("Battery") {
-                Picker("Let the Mac sleep at", selection: $batteryFloor) {
-                    ForEach([5, 10, 15, 20, 25, 30], id: \.self) { Text("\($0)%").tag($0) }
-                }
-                Picker("Turn on Low Power Mode at", selection: $softFloor) {
-                    Text("Never").tag(0)
-                    ForEach([30, 40, 50, 60], id: \.self) { Text("\($0)%").tag($0) }
-                }
-                Picker("On battery, start only above", selection: $engageAbove) {
-                    Text("Any level").tag(0)
-                    ForEach([30, 50, 70], id: \.self) { Text("\($0)%").tag($0) }
-                }
-                Text("If the battery level can’t be read while on battery, HODL lets the Mac sleep rather than guess. Low Power Mode needs the closed-lid helper below.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section("Heat") {
-                Toggle("Let the Mac rest when it gets hot", isOn: $thermalGuard)
-                Text("HODL turns on Low Power Mode when macOS reports serious heat, lets the Mac sleep if it lasts 10 minutes, and at once if it becomes critical.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+    @ViewBuilder private var safetyTab: some View {
+        SettingsCard(title: "Battery",
+                     note: "If the battery level can’t be read on battery, HODL lets the Mac sleep rather than guess. Low Power Mode needs the closed-lid helper in Lid & Display.") {
+            ChoiceRow(symbol: "battery.25percent", title: "Let the Mac sleep at", tint: .red, options: [5, 10, 15, 20, 25, 30].map { ($0, "\($0)%") }, selection: $batteryFloor)
+            RowDivider()
+            ChoiceRow(symbol: "leaf.fill", title: "Turn on Low Power Mode at", tint: .yellow, options: [(0, "Never")] + [30, 40, 50, 60].map { ($0, "\($0)%") }, selection: $softFloor)
+            RowDivider()
+            ChoiceRow(symbol: "battery.75percent", title: "On battery, start only above", tint: .green, options: [(0, "Any level")] + [30, 50, 70].map { ($0, "\($0)%") }, selection: $engageAbove)
         }
-        .formStyle(.grouped)
-        .fixedSize(horizontal: false, vertical: true)
+        SettingsCard(title: "Heat") {
+            SwitchRow(symbol: "thermometer.medium", title: "Let the Mac rest when it gets hot",
+                      detail: "Low Power Mode on serious heat, sleep if it lasts 10 minutes, and sleep at once if it turns critical.",
+                      tint: .orange, isOn: $thermalGuard)
+        }
     }
 
-    private var lidTab: some View {
-        Form {
-            Section("Lid") {
-                Picker("Stay awake when the lid is", selection: $lidPolicy) {
-                    ForEach(LidPolicy.allCases) { Text($0.title).tag($0) }
-                }
-                Text(lidPolicy.detail).font(.caption).foregroundStyle(.secondary)
-                Toggle("Stay awake with the lid closed on battery", isOn: $closedLidOnBattery)
+    @ViewBuilder private var lidTab: some View {
+        SettingsCard(title: "Lid") {
+            ChoiceRow(symbol: "laptopcomputer", title: "Stay awake when the lid is", detail: lidPolicy.detail, options: LidPolicy.allCases.map { ($0, $0.short) }, selection: $lidPolicy)
+            RowDivider()
+            SwitchRow(symbol: "battery.100percent.bolt", title: "Stay awake with the lid closed on battery",
+                      detail: "macOS always sleeps on lid close on battery. HODL switches that off only while it keeps the Mac awake, and always switches it back, even after a crash.",
+                      tint: .green, isOn: $closedLidOnBattery)
+                .disabled(!helperInstalled)
+            RowDivider()
+            SettingRow(symbol: "key.fill", title: "Closed-lid helper",
+                       detail: helperInstalled ? "Installed" : "Needed to stay awake with the lid closed on battery, and for Low Power Mode.", tint: .gray) {
+                RowButton(title: helperInstalled ? "Remove…" : "Install…", destructive: helperInstalled) { toggleHelper() }
+            }
+            if let helperError {
+                Text(verbatim: helperError)
+                    .font(.caption).foregroundStyle(.orange)
+                    .padding(.horizontal, 12).padding(.bottom, 10)
+            }
+        }
+        Text("The helper adds /etc/sudoers.d/hodl, which lets HODL run only these four commands without a password: \(Privileged.commands.joined(separator: ", ")).")
+            .font(.caption2).foregroundStyle(.tertiary).textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 4)
+            .padding(.top, -12)
+        SettingsCard(title: "When the lid closes while awake",
+                     note: "Agents, terminals, meeting apps, browsers, editors, and Apple’s own apps are never paused. Everything comes back when the lid opens or HODL turns off.") {
+            SwitchRow(symbol: "moon.fill", title: "Quiet Mode", detail: "Do the things below each time you close the lid.", tint: .indigo, isOn: $lidPack)
+            Group {
+                RowDivider()
+                SwitchRow(symbol: "sun.min.fill", title: "Dim the display and keyboard light", tint: .yellow, isOn: $packDim)
+                RowDivider()
+                SwitchRow(symbol: "speaker.slash.fill", title: "Mute sound", tint: .pink, isOn: $packMute)
+                RowDivider()
+                SwitchRow(symbol: "bubble.left.and.bubble.right.fill", title: "Pause Slack, Discord, and WhatsApp", tint: .teal, isOn: $packPauseChat)
+                RowDivider()
+                SwitchRow(symbol: "dock.rectangle", title: "Pause other Dock apps too", tint: .teal, isOn: $packPauseApps)
+                RowDivider()
+                SwitchRow(symbol: "leaf.fill", title: "Turn on Low Power Mode", tint: .yellow, isOn: $packLowPower)
                     .disabled(!helperInstalled)
-                Text("On AC power HODL’s sleep assertions keep the Mac awake with the lid closed. On battery, macOS sleeps on lid close no matter what, unless lid-close sleep is switched off with `pmset disablesleep`. HODL turns it off only while keeping the Mac awake, journals it first, and always turns it back on, even after a crash.")
-                    .font(.caption).foregroundStyle(.secondary)
-                LabeledContent("Closed-lid helper") {
-                    HStack {
-                        Text(helperInstalled ? "Installed" : "Not installed").foregroundStyle(.secondary)
-                        Button(helperInstalled ? "Remove…" : "Install…") { toggleHelper() }
-                    }
-                }
-                Text("Adds /etc/sudoers.d/hodl, which lets HODL run only these four commands without a password: \(Privileged.commands.joined(separator: ", ")).")
-                    .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
-                if let helperError {
-                    Text(verbatim: helperError).font(.caption).foregroundStyle(.orange)
-                }
+                RowDivider()
+                SwitchRow(symbol: "lock.fill", title: "Lock the screen", tint: .gray, isOn: $packLock)
             }
-            Section("When the lid closes while awake") {
-                Toggle("Quiet Mode", isOn: $lidPack)
-                Group {
-                    Toggle("Dim the display and keyboard light", isOn: $packDim)
-                    Toggle("Mute sound", isOn: $packMute)
-                    Toggle("Pause Slack, Discord, and WhatsApp", isOn: $packPauseChat)
-                    Toggle("Pause other Dock apps too", isOn: $packPauseApps)
-                    Toggle("Turn on Low Power Mode", isOn: $packLowPower).disabled(!helperInstalled)
-                    Toggle("Lock the screen", isOn: $packLock)
-                }
-                .disabled(!lidPack)
-                Text("Agents, terminals, meeting apps (Zoom, Teams, Webex, FaceTime, OBS, Loom), browsers, editors, and Apple’s own apps are never paused. Everything resumes when the lid opens or HODL turns off. On Apple silicon the built-in microphone disconnects while the lid is closed.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section("Display") {
-                Toggle("Turn the display off when HODL turns on", isOn: $displayOff)
-                Toggle("Keep the display on", isOn: $keepDisplayAwake)
-                Toggle("Prevent the screen saver and screen lock", isOn: $preventLock)
-                Text("Off, macOS starts the screen saver and locks the screen as usual while your agents keep working. On, HODL tells macOS someone is there every 30 seconds, so neither starts until HODL turns off.")
-                    .font(.caption).foregroundStyle(.secondary)
-                Picker("Turn the display off after agents finish", selection: $displayOffAfterAgents) {
-                    Text("Never").tag(0)
-                    ForEach([10, 30, 60, 300], id: \.self) { Text($0 < 60 ? "After \($0) seconds" : "After \($0 / 60) minute\($0 == 60 ? "" : "s")").tag($0) }
-                }
-            }
+            .disabled(!lidPack)
         }
-        .formStyle(.grouped)
-        .fixedSize(horizontal: false, vertical: true)
+        SettingsCard(title: "Display") {
+            SwitchRow(symbol: "display", title: "Turn the display off when HODL turns on", tint: .blue, isOn: $displayOff)
+            RowDivider()
+            SwitchRow(symbol: "sun.max.fill", title: "Keep the display on", tint: .yellow, isOn: $keepDisplayAwake)
+            RowDivider()
+            SwitchRow(symbol: "lock.open.fill", title: "Prevent the screen saver and screen lock",
+                      detail: "Off, the Mac locks as usual while agents keep working. On, nothing starts until HODL turns off.",
+                      tint: .gray, isOn: $preventLock)
+            RowDivider()
+            ChoiceRow(symbol: "moon.zzz.fill", title: "Turn the display off after agents finish", tint: .blue, options: [(0, "Never"), (10, "10 s"), (30, "30 s"), (60, "1 min"), (300, "5 min")], selection: $displayOffAfterAgents)
+        }
     }
 
-    private var agentsTab: some View {
-        Form {
-            Section("Watching") {
-                Text(Harness.all.map(\.title).joined(separator: ", "))
-                Text("HODL sees which agents are running from process names and bundle IDs, and guesses whether they’re working from CPU use. It never reads code, prompts, or terminal output.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section {
-                Toggle("Keep agent apps out of App Nap", isOn: Binding(
-                    get: { appNapOff },
-                    set: { AppNap.setDisabledForAgents($0); appNapOff = AppNap.isDisabledForAgents }
-                ))
-                Text("Stops macOS from throttling Cursor, Codex, and Windsurf when their windows are in the background. Takes effect the next time each app opens.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section("Hooks") {
-                LabeledContent("Installed for") {
-                    Text(hookedAgents.isEmpty ? "None" : hookedAgents.joined(separator: ", ")).foregroundStyle(.secondary)
-                }
-                HStack {
-                    Button("Install Hooks and Command-Line Tools") {
+    @ViewBuilder private var agentsTab: some View {
+        SettingsCard(title: "Watching",
+                     note: "HODL sees which agents run from process names and bundle IDs, and guesses whether they’re working from CPU use. It never reads code, prompts, or terminal output.") {
+            SettingRow(symbol: "eye.fill", title: "Agents HODL watches for", detail: Harness.all.map(\.title).joined(separator: ", "), tint: .purple) { EmptyView() }
+            RowDivider()
+            SwitchRow(symbol: "bolt.fill", title: "Keep agent apps out of App Nap",
+                      detail: "Stops macOS from slowing Cursor, Codex, and Windsurf in the background. Applies the next time each app opens.",
+                      tint: .orange, isOn: Binding(
+                          get: { appNapOff },
+                          set: { AppNap.setDisabledForAgents($0); appNapOff = AppNap.isDisabledForAgents }
+                      ))
+        }
+        SettingsCard(title: "Hooks",
+                     note: "Working and Idle hooks for Claude Code, Codex, Cursor, and OpenCode tell HODL exactly when each session works. They send only the agent, its state, and a session ID to 127.0.0.1:8742, and every changed file is backed up first as .hodl-backup.") {
+            SettingRow(symbol: "link", title: "Installed for", detail: hookedAgents.isEmpty ? "None yet" : hookedAgents.joined(separator: ", "), tint: .purple) {
+                HStack(spacing: 6) {
+                    RowButton(title: hookedAgents.isEmpty ? "Install" : "Reinstall") {
                         hookReport = HookInstaller.installAll()
                         hookedAgents = HookInstaller.installedAgents
                     }
-                    Button("Remove Hooks") {
-                        hookReport = HookInstaller.uninstallAll()
-                        hookedAgents = HookInstaller.installedAgents
+                    if !hookedAgents.isEmpty {
+                        RowButton(title: "Remove", destructive: true) {
+                            hookReport = HookInstaller.uninstallAll()
+                            hookedAgents = HookInstaller.installedAgents
+                        }
                     }
-                    .disabled(hookedAgents.isEmpty)
                 }
-                Text("Adds Working/Idle hooks to Claude Code, Codex, Cursor, and OpenCode, so HODL knows exactly when each session works. Hooks send only the agent, its state, and a session ID to 127.0.0.1:8742. Each changed file is backed up first as .hodl-backup.")
-                    .font(.caption).foregroundStyle(.secondary)
-                ForEach(hookReport, id: \.self) { Text(verbatim: $0).font(.caption) }
             }
-            Section("Command line") {
-                Text(verbatim: "hodl hold --until agents-idle\nhodl status\nhodl-run -- <command>")
-                    .font(.system(.caption, design: .monospaced)).textSelection(.enabled)
-                Text("`hodl-run` keeps the Mac awake while a command runs, with a heartbeat to 127.0.0.1:8742. The tools install to ~/.local/bin.")
-                    .font(.caption).foregroundStyle(.secondary)
+            if !hookReport.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(hookReport, id: \.self) { Text(verbatim: $0).font(.caption).foregroundStyle(.secondary) }
+                }
+                .padding(.leading, 48).padding(.trailing, 12).padding(.bottom, 10)
             }
         }
-        .formStyle(.grouped)
-        .fixedSize(horizontal: false, vertical: true)
+        SettingsCard(title: "Command line",
+                     note: "Installed with the hooks, to ~/.local/bin. hodl-run keeps the Mac awake while a command runs.") {
+            Text(verbatim: "hodl hold --until agents-idle\nhodl status\nhodl-run -- <command>")
+                .font(.system(size: 11.5, design: .monospaced))
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+        }
     }
 
-    private var generalTab: some View {
-        Form {
-            Section {
-                Toggle("Open at login", isOn: Binding(
-                    get: { launchAtLogin },
-                    set: { enabled in
-                        do {
-                            if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-                        } catch {
-                            NSSound.beep()
-                        }
-                        launchAtLogin = SMAppService.mainApp.status == .enabled
+    @ViewBuilder private var generalTab: some View {
+        SettingsCard(title: "General") {
+            SwitchRow(symbol: "power", title: "Open at login", tint: .green, isOn: Binding(
+                get: { launchAtLogin },
+                set: { enabled in
+                    do {
+                        if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+                    } catch {
+                        NSSound.beep()
                     }
-                ))
-                Toggle("Turn HODL on or off with ⌥⌘L", isOn: $hotkey)
-                Toggle("Show notifications", isOn: $notifications)
-                Toggle("Play sounds", isOn: $playSounds)
-                Toggle("Also run caffeinate as a backup", isOn: $caffeinateAlways)
-                Text("HODL uses IOKit power assertions. It starts `caffeinate -i -s` on its own only if macOS refuses them.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section {
-                LabeledContent("Remove HODL from this Mac") {
-                    Button("Uninstall…", role: .destructive) { Uninstaller.run() }
+                    launchAtLogin = SMAppService.mainApp.status == .enabled
                 }
-                Text("Removes hooks, command-line tools, the closed-lid helper, and the login item, then moves HODL to the Trash. HODL won’t uninstall while it’s keeping the Mac awake or something is still waiting to be put back.")
-                    .font(.caption).foregroundStyle(.secondary)
-            } footer: {
-                VStack(spacing: 6) {
-                    HStack(spacing: 6) {
-                        Text("Made by").foregroundStyle(.secondary)
-                        Text(verbatim: "1xAI").font(.system(.callout, design: .rounded).weight(.heavy))
-                    }
-                    HStack(spacing: 10) {
-                        Link("Visit the website", destination: AppLinks.website)
-                        Link(AppLinks.repositoryLabel, destination: AppLinks.repository)
-                    }
-                    .font(.caption)
-                    Text(verbatim: "HODL \(Bundle.main.shortVersion) · \(Bundle.main.copyright)")
-                        .font(.caption).foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.top, 8)
+            ))
+            RowDivider()
+            SwitchRow(symbol: "command", title: "Turn HODL on or off with ⌥⌘L", tint: .gray, isOn: $hotkey)
+            RowDivider()
+            SwitchRow(symbol: "bell.badge.fill", title: "Show notifications", tint: .red, isOn: $notifications)
+            RowDivider()
+            SwitchRow(symbol: "speaker.wave.2.fill", title: "Play sounds", tint: .pink, isOn: $playSounds)
+            RowDivider()
+            SwitchRow(symbol: "cup.and.saucer.fill", title: "Also run caffeinate as a backup",
+                      detail: "HODL uses IOKit power assertions, and starts caffeinate -i -s on its own only if macOS refuses them.",
+                      tint: .brown, isOn: $caffeinateAlways)
+        }
+        SettingsCard(title: "Uninstall",
+                     note: "Removes hooks, command-line tools, the closed-lid helper, and the login item, then moves HODL to the Trash. It waits while HODL is keeping the Mac awake or still has something to put back.") {
+            SettingRow(symbol: "trash.fill", title: "Remove HODL from this Mac", tint: .red) {
+                RowButton(title: "Uninstall…", destructive: true) { Uninstaller.run() }
             }
         }
-        .formStyle(.grouped)
-        .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 6) {
+            HODLMark(size: 40)
+            HStack(spacing: 6) {
+                Text("Made by").foregroundStyle(.secondary)
+                Text(verbatim: "1xAI").font(.system(.callout, design: .rounded).weight(.heavy))
+            }
+            HStack(spacing: 10) {
+                Link("Visit the website", destination: AppLinks.website)
+                Link(AppLinks.repositoryLabel, destination: AppLinks.repository)
+            }
+            .font(.caption)
+            Text(verbatim: "HODL \(Bundle.main.shortVersion) · \(Bundle.main.copyright)")
+                .font(.caption).foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 4)
     }
 
     private func chooseApp() {

@@ -18,6 +18,13 @@ enum Snapshots {
             write(MenuPanel(engine: .shared, agents: .shared, power: .shared), name: "panel-\(suffix)", scheme: scheme, folder: folder)
         }
         write(AboutView(), name: "about", scheme: .light, folder: folder)
+        for (tab, name) in [(SettingsView.Tab.awake, "awake"), (.safety, "safety"), (.lid, "lid"), (.agents, "agents"), (.general, "general")] {
+            SettingsView.initialTab = tab
+            write(SettingsView(engine: .shared), name: "settings-\(name)", scheme: .light, folder: folder)
+        }
+        SettingsView.initialTab = .lid
+        write(SettingsView(engine: .shared), name: "settings-lid-dark", scheme: .dark, folder: folder)
+        SettingsView.initialTab = nil
         write(AppIconArtwork(), name: "icon", scheme: .light, folder: folder, scale: 0.5)
     }
 
