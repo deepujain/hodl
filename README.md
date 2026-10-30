@@ -13,7 +13,7 @@
 
 ## Download
 
-**[Download HODL 1.0.6](https://github.com/deepujain/hodl/releases/download/v1.0.6/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.6) · [website](https://1xaispark.com/apps/hodl.html)
+**[Download HODL 1.0.7](https://github.com/deepujain/hodl/releases/download/v1.0.7/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.7) · [website](https://1xaispark.com/apps/hodl.html)
 
 Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL to Applications, then right-click it and choose **Open** the first time; the build isn’t notarized yet.
 
