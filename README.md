@@ -15,7 +15,7 @@
 
 **[Download HODL 1.0.7](https://github.com/deepujain/hodl/releases/download/v1.0.7/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.7) · [website](https://1xaispark.com/apps/hodl.html)
 
-Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip, move HODL to Applications, then right-click it and choose **Open** the first time; the build isn’t notarized yet.
+Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip and move HODL to Applications. The first time you open it, macOS blocks it with “Apple cannot check it for malicious software,” because the build isn’t notarized by Apple yet. Click **OK**, then open **System Settings › Privacy & Security**, scroll down to **Security**, click **Open Anyway** next to HODL, and enter your password. You only need to do this once. Prefer Terminal? `xattr -dr com.apple.quarantine /Applications/HODL.app` does the same thing.
 
 ## Nothing to remember
 
@@ -125,7 +125,7 @@ docs/photos/          Photos behind the website images (HODL --marketing <folder
 
 ## Not yet
 
-Schedules and triggers, Shortcuts and AppleScript, hotspot failover, a tmux “continue” nudge, Always On over SSH, and a Homebrew cask. Builds are ad hoc signed; notarization needs a Developer ID certificate, so the first launch needs right-click › Open.
+Schedules and triggers, Shortcuts and AppleScript, hotspot failover, a tmux “continue” nudge, Always On over SSH, and a Homebrew cask. Builds are ad hoc signed; notarization needs a Developer ID certificate, so the first launch needs **Open Anyway** in System Settings › Privacy & Security.
 
 Made by [1xAI](https://1xaispark.com/apps/hodl.html).
 
