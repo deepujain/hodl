@@ -15,7 +15,13 @@
 
 **[Download HODL 1.0.7](https://github.com/deepujain/hodl/releases/download/v1.0.7/HODL.zip)** (universal, 2.9 MB) · [release notes](https://github.com/deepujain/hodl/releases/tag/v1.0.7) · [website](https://1xaispark.com/apps/hodl.html)
 
-Requires macOS 14 Sonoma or later, on Apple silicon or Intel. Unzip and move HODL to Applications. The first time you open it, macOS blocks it with “Apple cannot check it for malicious software,” because the build isn’t notarized by Apple yet. Click **OK**, then open **System Settings › Privacy & Security**, scroll down to **Security**, click **Open Anyway** next to HODL, and enter your password. You only need to do this once. Prefer Terminal? `xattr -dr com.apple.quarantine /Applications/HODL.app` does the same thing.
+Requires macOS 14 Sonoma or later, on Apple silicon or Intel.
+
+1. Download **HODL.zip** from the link above.
+2. Open the zip and drag **HODL.app** into your **Applications** folder.
+3. Open it. The first time, macOS blocks it with “Apple cannot check it for malicious software,” because the app isn’t notarized by Apple yet. Click **OK**, then open **System Settings › Privacy & Security**, scroll down to **Security**, click **Open Anyway** next to HODL, and enter your password. You only need to do this once.
+
+   Prefer Terminal? This does the same thing: `xattr -dr com.apple.quarantine /Applications/HODL.app`
 
 ## Nothing to remember
 
