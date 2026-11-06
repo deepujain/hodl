@@ -80,7 +80,7 @@ The build uses SwiftPM, `lipo` for a universal binary, the icon rendered from `R
 
 **Lid policy.** Stay awake with the lid open, closed, or either.
 
-**Agents.** HODL watches Cursor, Claude Code, Codex, Aider, Pi, OpenCode, Gemini CLI, Copilot CLI, Windsurf, and Cline. Each shows as Active, Idle, Detected, or Not running.
+**Agents.** HODL watches Cursor, Claude Code, Codex, Herdr, Pi, OpenCode, Gemini CLI, Copilot CLI, Windsurf, and Cline. Each shows as Active, Idle, Detected, or Not running. For [Herdr](https://herdr.dev), HODL asks the running Herdr for each terminal’s status (`herdr-core ls --json`), so it knows exactly when Herdr’s agents are working; it never reads their output.
 - **Hooks first.** One click (or `hodl install-hooks`) adds Working/Idle hooks to Claude Code, Codex, Cursor, and OpenCode, so HODL tracks each session separately and knows exactly when it’s working. Existing hooks are kept; Codex’s existing `notify` command is chained, not replaced. Every edited file is backed up as `.hodl-backup`.
 - **Processes as a fallback.** Without hooks, HODL matches executable paths and bundle IDs and estimates work from CPU use across each agent’s process tree.
 - **Agents Only.** With Agents Only on, HODL keeps the Mac awake only while an agent is working, and lets it sleep after a configurable idle timeout (10 minutes by default).

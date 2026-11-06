@@ -18,6 +18,9 @@ final class AgentMonitor {
     @ObservationIgnored private var previousScan: Date?
     @ObservationIgnored private var smoothedCPU: [String: Double] = [:]
     @ObservationIgnored private var busyUntil: [String: Date] = [:]
+    /// Herdr's own count of its agent terminals, from `herdr-core ls --json`.
+    @ObservationIgnored private var herdr: (working: Int, agents: Int, at: Date)?
+    @ObservationIgnored private var herdrPollStarted: Date?
 
     private init() {}
 
@@ -87,6 +90,11 @@ final class AgentMonitor {
         previousScan = now
 
         expireSessions(now: now, alive: Set(samples.map(\.pid)))
+        if let core = samples.first(where: { $0.path.hasSuffix("/Contents/MacOS/herdr-core") }) {
+            pollHerdr(core.path, now: now)
+        } else {
+            herdr = nil
+        }
 
         statuses = Harness.all.map { harness in
             let processes = direct.values.filter { $0 == harness.id }.count
@@ -96,6 +104,10 @@ final class AgentMonitor {
             let busy = (busyUntil[harness.id] ?? .distantPast) > now && processes > 0
 
             let mine = sessions.values.filter { $0.harnessID == harness.id }.sorted { $0.since < $1.since }
+            if harness.id == "herdr", processes > 0, let herdr, now.timeIntervalSince(herdr.at) < 30 {
+                let state: AgentState = herdr.working > 0 ? .active : herdr.agents > 0 ? .idle : .detected
+                return HarnessStatus(harness: harness, state: state, processes: herdr.working, cpu: smoothed, sessions: mine)
+            }
             let hooks = mine.filter { $0.source == .hook }
             let working = mine.contains { $0.working }
             let state: AgentState
@@ -115,6 +127,30 @@ final class AgentMonitor {
             return HarnessStatus(harness: harness, state: state, processes: processes, cpu: smoothed, sessions: mine)
         }
         if anyActive { lastActive = now }
+    }
+
+    /// Asks Herdr off the main thread. A stuck call only delays the next one; after 30 seconds it is retried.
+    private func pollHerdr(_ binary: String, now: Date) {
+        if let started = herdrPollStarted, now.timeIntervalSince(started) < 30 { return }
+        if let herdr, now.timeIntervalSince(herdr.at) < 4 { return }
+        herdrPollStarted = now
+        Task.detached {
+            let result = Shell.run(binary, ["ls", "--json"])
+            let counts = result.status == 0 ? AgentMonitor.herdrCounts(result.output) : nil
+            await MainActor.run {
+                let monitor = AgentMonitor.shared
+                monitor.herdrPollStarted = nil
+                monitor.herdr = counts.map { (working: $0.working, agents: $0.agents, at: Date()) }
+            }
+        }
+    }
+
+    /// Live Herdr terminals with an agent status, and how many of them are working. Plain shells have no status.
+    nonisolated static func herdrCounts(_ json: String) -> (working: Int, agents: Int)? {
+        guard let object = try? JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any],
+              let terminals = object["terminals"] as? [[String: Any]] else { return nil }
+        let agents = terminals.filter { $0["state"] as? String == "live" && $0["status"] is String }
+        return (agents.filter { $0["status"] as? String == "working" }.count, agents.count)
     }
 
     private static func match(_ sample: ProcessSample, bundleID: String?) -> String? {

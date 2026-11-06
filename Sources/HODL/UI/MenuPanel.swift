@@ -201,7 +201,7 @@ struct MenuPanel: View {
     }
 
     private func agentValue(_ status: HarnessStatus) -> String {
-        let sessions = status.sessions.count
+        let sessions = status.harness.id == "herdr" ? status.processes : status.sessions.count
         switch status.state {
         case .off: return "Not running"
         case .active: return sessions > 1 ? "Active · \(sessions)" : "Active"

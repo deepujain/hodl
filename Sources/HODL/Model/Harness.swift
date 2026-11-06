@@ -1,7 +1,7 @@
 import Foundation
 
 /// A coding agent HODL watches for. Matching uses only executable paths, the script an interpreter runs,
-/// and bundle IDs. HODL never reads code, prompts, or terminal output.
+/// and bundle IDs. HODL never reads code, prompts, or terminal output; from Herdr it reads only each terminal's status.
 struct Harness: Identifiable, Hashable, Sendable {
     let id: String
     let title: String
@@ -28,8 +28,9 @@ struct Harness: Identifiable, Hashable, Sendable {
         Harness(id: "codex", title: "Codex", symbol: "chevron.left.forwardslash.chevron.right",
                 executables: ["codex"], pathMarkers: ["@openai/codex"], bundleIDs: ["com.openai.codex"],
                 primary: true, busyCPU: 8),
-        Harness(id: "aider", title: "Aider", symbol: "hammer",
-                executables: ["aider"], primary: true),
+        Harness(id: "herdr", title: "Herdr", symbol: "rectangle.split.3x1",
+                pathMarkers: ["/Contents/MacOS/herdr-core"], bundleIDs: ["dev.herdr.app", "dev.herdr.core"],
+                primary: true, hooksReportWork: true),
         Harness(id: "pi", title: "Pi", symbol: "p.circle",
                 executables: ["pi"], pathMarkers: ["pi-coding-agent"], primary: true),
         Harness(id: "opencode", title: "OpenCode", symbol: "curlybraces",
