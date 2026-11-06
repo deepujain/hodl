@@ -14,7 +14,7 @@ enum Marketing {
 
         engine.stage(endsIn: 7 * 3600 + 42 * 60)
         power.stage(percent: 82, onAC: false, lidClosed: false)
-        agents.stage(["claude": .active, "codex": .active, "cursor": .active, "herdr": .idle, "pi": .off])
+        agents.stage(["claude": .active, "codex": .active, "cursor": .active, "herdr": .active, "pi": .off])
         let holding = MenuPanel(engine: engine, agents: agents, power: power)
         write(holding.panelChrome(dark: false, shadow: false), name: "panel-light", size: nil)
         write(holding.panelChrome(dark: true, shadow: false), name: "panel-dark", size: nil)
